@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrito de Compras</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f4f4;
+        }
+        .carrito {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #fff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            line-height: 40px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        .carrito-icono {
+            font-size: 20px;
+            color: #333;
+        }
+        .carrito-numero {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: red;
+            color: #fff;
+            font-size: 12px;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+        }
+    </style>
+<style>
+    body {
+        background-color: #333;
+        color: #fff;
+    }
+    .producto {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 10px;
+        transition: box-shadow 0.3s;
+        background-color: #444;
+    }
+    .producto:hover {
+        box-shadow: 0 0 11px rgba(33,33,33,.2);
+    }
+    .producto img {
+        max-height: 200px;
+        object-fit: cover;
+    }
+    .precio {
+        font-size: 18px;
+        color: #28a745;
+    }
+    .table th, .table td {
+        color: #fff;
+    }
+    .total {
+        font-size: 24px;
+        font-weight: bold;
+        text-align: right;
+    }
+</style>
+<style>
+    body {
+        color: white;
+    }
+    table {
+        color: black; 
+    }
+    th,
+    td {
+        border: 1px solid white; 
+    }
+    
+    .btn {
+        color: white !important; 
+    }
+    .total {
+        color: white; 
+    }
+    .container {
+        color: white; 
+    }
+</style>
+    <link rel="stylesheet" href="estilo.css">
+    
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">TiendaTec</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="index.html">Inicio</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="productos.html">Productos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="registro.html">Registrarse</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="inicio-sesion.html">Iniciar Sesión</a>
+                </li>
+            </ul>
+        </div>
+        <a href="carrito.html" class="carrito">
+            <span class="carrito-icono"><i class="fas fa-shopping-cart"></i></span>
+            <span class="carrito-numero">0</span>
+        </a>
+    </nav>
+
+    <!-- Contenido del Carrito -->
+    <div class="container mt-4">
+        <h2>Carrito de Compras</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Producto</th>
+                    <th scope="col">Precio</th>
+                    <th scope="col">Cantidad</th>
+                    <th scope="col">Total</th>
+                </tr>
+            </thead>
+            <tbody id="carrito-body">
+                <!-- Aquí se mostrarán los productos del carrito -->
+            </tbody>
+        </table>
+        <div class="total">
+            <p id="total-carrito">Total: $0</p>
+        </div>
+        
+        <button onclick="limpiarCarrito()" class="btn btn-danger">Limpiar Carrito</button>
+    </div>
+            <div class="container">
+                <h2>Seleccionar Método de Pago</h2>
+                <form id="paymentForm" onsubmit="return mostrarOpciones()">
+                    <label for="paymentMethod">Seleccione el Método de Pago:</label>
+                    <select id="paymentMethod" name="paymentMethod">
+                        <option value="tarjeta">Tarjeta de Crédito/Débito</option>
+                        <option value="paypal">PayPal</option>
+                        <option value="transferencia">Transferencia Bancaria</option>
+                    </select>
+                    <button onclick="procederAlPago()" class="btn btn-primary mt-4">Proceder al Pago</button>
+                </form>
+        
+                
+            </div>
+        </form>
+
+    <!-- Bootstrap JS y jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function agregarAlCarrito(event, id, nombre, precio) {
+            event.preventDefault();
+            let cantidad = document.getElementById('cantidad-' + id).value;
+            let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+            let producto = carrito.find(producto => producto.id === id);
+
+            if (producto) {
+                producto.cantidad += parseInt(cantidad);
+            } else {
+                carrito.push({ id, nombre, precio, cantidad: parseInt(cantidad) });
+            }
+
+            localStorage.setItem('carrito', JSON.stringify(carrito));
+            actualizarCarrito();
+        }
+
+        function actualizarCarrito() {
+            let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+            let carritoBody = document.getElementById('carrito-body');
+            carritoBody.innerHTML = '';
+
+            let totalCarrito = 0;
+            carrito.forEach((producto, index) => {
+                let totalProducto = producto.precio * producto.cantidad;
+                totalCarrito += totalProducto;
+                let row = `<tr>
+                    <th scope="row">${index + 1}</th>
+                    <td>${producto.nombre}</td>
+                    <td>$${producto.precio.toLocaleString('es-CL')}</td>
+                    <td>${producto.cantidad}</td>
+                    <td>$${totalProducto.toLocaleString('es-CL')}</td>
+                </tr>`;
+                carritoBody.innerHTML += row;
+            });
+
+            document.getElementById('total-carrito').textContent = `Total: $${totalCarrito.toLocaleString('es-CL')}`;
+        }
+
+        function limpiarCarrito() {
+            localStorage.removeItem('carrito');
+            actualizarCarrito();
+        }
+
+        function procederAlPago() {
+            alert('Procediendo al pago...');
+        }
+
+        document.addEventListener('DOMContentLoaded', actualizarCarrito);
+    </script>
+    <script>
+        function mostrarOpciones() {
+            var opcionesPago = document.getElementById('opcionesPago');
+            opcionesPago.classList.remove('hidden');
+            return false; // Evita que el formulario se envíe
+        }
+    </script>
+</body>
+</html>

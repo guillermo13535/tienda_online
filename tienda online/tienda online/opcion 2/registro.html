@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrarse</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="estilo.css">
+    
+    <style>
+        body {
+            background-image: url('ruta/a/tu/imagen.jpg');
+            background-size: cover;
+            background-position: center;
+            color: white;
+        }
+        .container {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 50px;
+        }
+        label {
+            color: white;
+        }
+        .form-control {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+        }
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+    <style>
+        body {
+            background-color: #f4f4f4;
+        }
+        .carrito {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #fff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            line-height: 40px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        .carrito-icono {
+            font-size: 20px;
+            color: #333;
+        }
+        .carrito-numero {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: red;
+            color: #fff;
+            font-size: 12px;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+        }
+    </style>
+    <style>
+    .field {
+        margin-bottom: 10px;
+      }
+      
+      .field label {
+        display: block;
+        font-size: 12px;
+        color: #ffffff;
+      }
+      
+      .field input {
+        display: block;
+        min-width: 250px;
+        line-height: 1.5;
+        font-size: 14px;
+      }
+      
+      input[type="submit"] {
+        display: block;
+        padding: 6px 30px;
+        font-size: 14px;
+        background-color: #4460AA;
+        color: #fff;
+        border: none
+      }
+    </style>
+    <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">TiendaTec</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="index.html">Inicio</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="productos.html">Productos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="registro.html">Registrarse</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="inicio-sesion.html">Iniciar Sesión</a>
+                </li>
+            </ul>
+        </div>
+        <a href="carrito.html" class="carrito">
+            <span class="carrito-icono"><i class="fas fa-shopping-cart"></i></span>
+            <span class="carrito-numero">0</span>
+        </a>
+    </nav>
+
+    <!-- Formulario de Registro -->
+    
+
+    <form id="form" onsubmit="return validarFormulario()">
+      <div class="field">
+          <label for="nombre">Nombre</label>
+          <input type="text" name="nombre" id="nombre" required>
+      </div>
+      <div class="field">
+          <label for="apellido">Apellido</label>
+          <input type="text" name="apellido" id="apellido" required>
+      </div>
+      <div class="field">
+          <label for="correo_electronico">Correo Electrónico</label>
+          <input type="email" name="correo_electronico" id="correo_electronico" required>
+      </div>
+      <div class="field">
+          <label for="crear_contraseña">Crear Contraseña</label>
+          <input type="password" name="crear_contraseña" id="crear_contraseña" required>
+      </div>
+      <div class="field">
+          <label for="repetir_contraseña">Repetir Contraseña</label>
+          <input type="password" name="repetir_contraseña" id="repetir_contraseña" required>
+      </div>
+  
+      <input type="submit" id="button" value="Registrarse">
+  </form>
+  <script type="text/javascript"
+  src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<script type="text/javascript">
+  emailjs.init('r6xWqaV0V8Qt2bCIS')
+</script>
+
+  <script>
+      function validarFormulario() {
+          var nombre = document.getElementById('nombre').value;
+          var apellido = document.getElementById('apellido').value;
+          var correo = document.getElementById('correo_electronico').value;
+          var contraseña = document.getElementById('crear_contraseña').value;
+          var repetirContraseña = document.getElementById('repetir_contraseña').value;
+
+          // Validar que los campos obligatorios no estén vacíos
+          if (nombre.trim() === "" || apellido.trim() === "" || correo.trim() === "" || contraseña.trim() === "" || repetirContraseña.trim() === "") {
+              alert("Por favor, complete todos los campos.");
+              return false;
+          }
+
+          // Validar que las contraseñas coincidan
+          if (contraseña !== repetirContraseña) {
+              alert("Las contraseñas no coinciden.");
+              return false;
+          }
+
+          return true;
+      }
+  </script>
+      
+      <script type="text/javascript"
+        src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+      
+      <script type="text/javascript">
+        emailjs.init('r6xWqaV0V8Qt2bCIS')
+      </script>
+     <script>
+     const btn = document.getElementById('button');
+
+document.getElementById('form')
+ .addEventListener('submit', function(event) {
+   event.preventDefault();
+
+   btn.value = 'Sending...';
+
+   const serviceID = 'default_service';
+   const templateID = 'template_z1y65gh';
+
+   emailjs.sendForm(serviceID, templateID, this)
+    .then(() => {
+      btn.value = 'Send Email';
+      alert('Sent!');
+    }, (err) => {
+      btn.value = 'Send Email';
+      alert(JSON.stringify(err));
+    });
+});
+    </script>
+
+    <!-- Bootstrap JS y jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        document.getElementById('formRegistro').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var contrasena = document.getElementById('contrasena').value;
+            var confirmarContrasena = document.getElementById('confirmarContrasena').value;
+            if (contrasena !== confirmarContrasena) {
+                alert('Las contraseñas no coinciden.');
+                return;
+            }
+            alert('Registro exitoso!');
+            // Aquí iría la lógica para enviar un correo de confirmación y registrar al usuario
+        });
+    </script>
+</body>
+</html>
