@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="TecnoGamer - Tienda de tecnología y artículos gamer: smartphones, audífonos, parlantes y más." />
+  <title>TecnoGamer | Tienda de Tecnología y Gaming</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body data-page="home">
+  <div data-include="header"></div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container hero__inner">
+      <div class="hero__content">
+        <p class="hero__tag">⚡ Tecnología y gaming en un solo lugar</p>
+        <h1 class="hero__title">Equípate con lo <span>mejor</span> del mundo tech</h1>
+        <p class="hero__text">Smartphones de última generación, audio premium y periféricos gamer. Envío a todo Chile y garantía oficial.</p>
+        <div class="hero__cta">
+          <a href="productos.html" class="btn btn--primary">Ver productos</a>
+          <a href="#destacados" class="btn btn--outline">Destacados</a>
+        </div>
+      </div>
+      <div class="hero__art" aria-hidden="true">
+        <div class="hero__glow"></div>
+        <div class="hero__emoji">🎮</div>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+    <!-- Video destacado -->
+    <section class="video-strip">
+      <div class="video-strip__frame">
+        <video autoplay muted loop playsinline>
+          <source src="assets/video.mp4" type="video/mp4" />
+          Tu navegador no soporta video.
+        </video>
+      </div>
+    </section>
+
+    <!-- Productos destacados -->
+    <section class="block" id="destacados">
+      <h2 class="section-title">Productos Destacados</h2>
+      <div class="products" id="products"></div>
+      <div style="text-align:center; margin-top:30px">
+        <a href="productos.html" class="btn btn--outline">Ver todo el catálogo</a>
+      </div>
+    </section>
+  </main>
+
+  <div data-include="footer"></div>
+
+  <script src="js/products.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/pages.js"></script>
+</body>
+</html>
