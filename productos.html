@@ -14,24 +14,25 @@
   <div data-include="header"></div>
 
   <main class="container block">
-    <h2 class="section-title">Catálogo de Productos</h2>
+    <div class="filters" id="filters">
+      <button class="chip active" data-filter="all">Todos</button>
+      <button class="chip" data-filter="smartphones">Celulares</button>
+      <button class="chip" data-filter="gamer">Gamer</button>
+      <button class="chip" data-filter="audio">Audio</button>
+    </div>
 
     <div class="toolbar">
-      <div class="filters" id="filters">
-        <button class="chip active" data-filter="all">Todos</button>
-        <button class="chip" data-filter="smartphones">Smartphones</button>
-        <button class="chip" data-filter="gamer">Gamer</button>
-        <button class="chip" data-filter="audio">Audio</button>
+      <div class="toolbar__info">
+        <h2 id="catalogTitle">Todos los productos</h2>
+        <p id="resultCount"></p>
       </div>
-      <div class="tools">
-        <input type="search" id="searchInput" class="input" placeholder="Buscar producto..." aria-label="Buscar" />
-        <select id="sortSelect" class="select" aria-label="Ordenar">
-          <option value="default">Ordenar por</option>
-          <option value="price-asc">Precio: menor a mayor</option>
-          <option value="price-desc">Precio: mayor a menor</option>
-          <option value="name">Nombre A-Z</option>
-        </select>
-      </div>
+      <select id="sortSelect" class="select" aria-label="Ordenar">
+        <option value="default">Más relevantes</option>
+        <option value="sold">Más vendidos</option>
+        <option value="price-asc">Menor precio</option>
+        <option value="price-desc">Mayor precio</option>
+        <option value="name">Nombre A-Z</option>
+      </select>
     </div>
 
     <div class="products" id="products"></div>

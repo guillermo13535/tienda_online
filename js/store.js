@@ -1,8 +1,9 @@
 /* =========================================================
-   TecnoGamer - Lógica compartida
+   TecnoGamer - Lógica compartida (estructura estilo Mercado Libre)
    - Carrito (localStorage)
-   - Navbar y footer reutilizables
-   - Helpers de formato y notificaciones
+   - Header con buscador + barra de categorías
+   - Footer multi-columna
+   - Helpers de formato, descuentos y cuotas
    Se carga DESPUÉS de products.js en todas las páginas.
    ========================================================= */
 
@@ -11,7 +12,7 @@
 
   const CART_KEY = "tecnogamer_carrito";
 
-  /* ---------- Helpers ---------- */
+  /* ---------- Helpers de formato ---------- */
   const money = (n) => "$" + Number(n).toLocaleString("es-CL");
 
   function findProduct(id) {
@@ -20,6 +21,19 @@
 
   function stars(n) {
     return "★".repeat(n) + "☆".repeat(5 - n);
+  }
+
+  // Porcentaje de descuento a partir del precio anterior
+  function discountPct(p) {
+    if (!p.oldPrice || p.oldPrice <= p.price) return 0;
+    return Math.round((1 - p.price / p.oldPrice) * 100);
+  }
+
+  // Texto de cuotas estilo ML: "12x $83.332 sin interés"
+  function installmentText(p) {
+    if (!p.installments || p.installments <= 1) return "";
+    const cuota = Math.round(p.price / p.installments);
+    return `${p.installments}x ${money(cuota)} sin interés`;
   }
 
   /* ---------- Estado del carrito ---------- */
@@ -41,11 +55,8 @@
     qty = Math.max(1, parseInt(qty, 10) || 1);
     const cart = getCart();
     const item = cart.find((i) => i.id === id);
-    if (item) {
-      item.qty += qty;
-    } else {
-      cart.push({ id, qty });
-    }
+    if (item) item.qty += qty;
+    else cart.push({ id, qty });
     saveCart(cart);
     const p = findProduct(id);
     showToast(`✓ ${p ? p.name : "Producto"} agregado al carrito`);
@@ -89,6 +100,7 @@
     const { count } = cartTotals();
     document.querySelectorAll("[data-cart-count]").forEach((el) => {
       el.textContent = count;
+      el.style.display = count > 0 ? "grid" : "none";
     });
   }
 
@@ -108,77 +120,143 @@
     toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
   }
 
-  /* ---------- Navbar y footer reutilizables ---------- */
+  /* ---------- Buscador: redirige a productos.html?q= ---------- */
+  function goSearch(q) {
+    const term = (q || "").trim();
+    window.location.href = "productos.html" + (term ? "?q=" + encodeURIComponent(term) : "");
+  }
+
+  /* ---------- Header y footer estilo Mercado Libre ---------- */
   function renderChrome() {
     const page = document.body.dataset.page || "";
+    const sesion = localStorage.getItem("tecnogamer_sesion");
+
+    const catLinks = Object.entries(CATEGORIES)
+      .map(([key, c]) =>
+        `<a href="productos.html?cat=${key}">${c.label}</a>`)
+      .join("");
 
     const header = document.querySelector("[data-include='header']");
     if (header) {
       header.outerHTML = `
-        <header class="header">
-          <div class="container navbar">
-            <a href="index.html" class="brand">
-              <span class="brand__icon">⬢</span>
-              <span class="brand__text">TECNO<span>GAMER</span></span>
-            </a>
-            <nav class="nav-links" id="navLinks">
-              <a href="index.html" ${page === "home" ? 'class="active"' : ""}>Inicio</a>
-              <a href="productos.html" ${page === "productos" ? 'class="active"' : ""}>Productos</a>
-              <a href="registro.html" ${page === "registro" ? 'class="active"' : ""}>Registrarse</a>
-              <a href="login.html" ${page === "login" ? 'class="active"' : ""}>Iniciar Sesión</a>
-              <a href="admin.html" ${page === "admin" ? 'class="active"' : ""}>Admin</a>
-            </nav>
-            <div class="nav-actions">
-              <a href="carrito.html" class="cart-link" aria-label="Carrito">
-                🛒 <span class="cart-link__count" data-cart-count>0</span>
+        <header class="ml-header">
+          <!-- Fila superior: logo + buscador + cuenta + carrito -->
+          <div class="ml-header__top">
+            <div class="container ml-header__row">
+              <a href="index.html" class="brand">
+                <span class="brand__icon">⬢</span>
+                <span class="brand__text">TECNO<span>GAMER</span></span>
               </a>
-              <button class="menu-toggle" id="menuToggle" aria-label="Menú">☰</button>
+
+              <form class="ml-search" id="searchForm" role="search">
+                <input type="search" id="searchInput" class="ml-search__input"
+                       placeholder="Buscar productos, marcas y más..." aria-label="Buscar" />
+                <button type="submit" class="ml-search__btn" aria-label="Buscar">🔍</button>
+              </form>
+
+              <div class="ml-header__actions">
+                <div class="ml-shipping">
+                  <span class="ml-shipping__ico">📍</span>
+                  <div>
+                    <small>Enviar a</small>
+                    <strong>Santiago, Chile</strong>
+                  </div>
+                </div>
+                <nav class="ml-account">
+                  ${sesion
+                    ? `<a href="#" id="logoutLink">Hola, ${sesion.split("@")[0]}</a>`
+                    : `<a href="registro.html">Crear cuenta</a><a href="login.html">Ingresar</a>`}
+                  <a href="admin.html">Mi cuenta</a>
+                </nav>
+                <a href="carrito.html" class="ml-cart" aria-label="Carrito">
+                  🛒 <span class="ml-cart__count" data-cart-count>0</span>
+                </a>
+                <button class="menu-toggle" id="menuToggle" aria-label="Menú">☰</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fila inferior: categorías -->
+          <div class="ml-header__nav">
+            <div class="container ml-catnav" id="catNav">
+              <a href="productos.html" ${page === "productos" ? 'class="active"' : ""}>📂 Categorías</a>
+              ${catLinks}
+              <a href="productos.html?cat=all">Ofertas</a>
+              <span class="ml-catnav__spacer"></span>
+              <a href="index.html" ${page === "home" ? 'class="active"' : ""}>Inicio</a>
             </div>
           </div>
         </header>`;
+
+      // Eventos del header
+      const form = document.getElementById("searchForm");
+      if (form) {
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+          goSearch(document.getElementById("searchInput").value);
+        });
+      }
       const toggle = document.getElementById("menuToggle");
-      toggle.addEventListener("click", () =>
-        document.getElementById("navLinks").classList.toggle("open")
-      );
+      if (toggle) toggle.addEventListener("click", () =>
+        document.getElementById("catNav").classList.toggle("open"));
+
+      const logout = document.getElementById("logoutLink");
+      if (logout) logout.addEventListener("click", (e) => {
+        e.preventDefault();
+        localStorage.removeItem("tecnogamer_sesion");
+        showToast("Sesión cerrada");
+        setTimeout(() => location.reload(), 800);
+      });
     }
 
     const footer = document.querySelector("[data-include='footer']");
     if (footer) {
       const year = new Date().getFullYear();
       footer.outerHTML = `
-        <footer class="footer">
-          <div class="container footer__inner">
+        <footer class="ml-footer">
+          <div class="container ml-footer__top">
             <div>
-              <h5 class="brand__text">TECNO<span>GAMER</span></h5>
-              <p>Tu tienda de tecnología y artículos gamer. Calidad, garantía y los mejores precios.</p>
+              <h5>Acerca de TecnoGamer</h5>
+              <a href="#">Quiénes somos</a>
+              <a href="#">Trabaja con nosotros</a>
+              <a href="#">Términos y condiciones</a>
+              <a href="#">Promociones</a>
             </div>
             <div>
-              <h5>Enlaces</h5>
-              <a href="index.html">Inicio</a>
-              <a href="productos.html">Productos</a>
-              <a href="carrito.html">Carrito</a>
+              <h5>Otros sitios</h5>
+              <a href="admin.html">Vender</a>
+              <a href="#">Desarrolladores</a>
+              <a href="#">Tendencias</a>
             </div>
             <div>
-              <h5>Cuenta</h5>
-              <a href="login.html">Iniciar sesión</a>
-              <a href="registro.html">Registrarse</a>
-              <a href="admin.html">Administración</a>
+              <h5>Ayuda</h5>
+              <a href="#">Comprar</a>
+              <a href="#">Medios de pago</a>
+              <a href="#">Cómo cuidamos tu privacidad</a>
             </div>
             <div>
-              <h5>Contacto</h5>
-              <p>📧 ventas@tecnogamer.cl</p>
-              <p>📱 +56 9 1234 5678</p>
-              <p>📍 Santiago, Chile</p>
+              <h5>Redes sociales</h5>
+              <a href="#">Twitch</a>
+              <a href="#">YouTube</a>
+              <a href="#">Instagram</a>
+              <a href="#">X / Twitter</a>
+            </div>
+            <div>
+              <h5>Medios de pago</h5>
+              <div class="ml-paychips">
+                <span>💳 Visa</span><span>💳 Mastercard</span>
+                <span>🏦 Transferencia</span><span>💰 PayPal</span>
+              </div>
             </div>
           </div>
-          <p class="footer__copy">© ${year} TecnoGamer. Proyecto demostrativo. Todos los derechos reservados.</p>
+          <p class="ml-footer__copy">© ${year} TecnoGamer - Proyecto demostrativo. Tienda de tecnología y artículos gamer · Santiago, Chile.</p>
         </footer>`;
     }
   }
 
   /* ---------- API pública ---------- */
   window.Store = {
-    money, stars, findProduct,
+    money, stars, findProduct, discountPct, installmentText,
     getCart, addToCart, setQty, changeQty, removeFromCart, clearCart,
     cartTotals, updateCartCount, showToast
   };

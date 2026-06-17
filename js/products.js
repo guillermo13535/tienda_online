@@ -1,17 +1,24 @@
 /* =========================================================
    TecnoGamer - Catálogo central de productos
    Precios en pesos chilenos (CLP) como enteros.
-   Este archivo es la ÚNICA fuente de datos de productos.
+   Estructura estilo Mercado Libre: precio anterior (descuento),
+   cuotas, envío gratis, vendidos, stock, condición, etc.
    ========================================================= */
 
 const PRODUCTS = [
   {
     id: 1,
-    name: "iPhone 15 Pro Max 256GB",
+    name: "iPhone 15 Pro Max 256GB Titanio Natural",
     category: "smartphones",
     price: 999990,
+    oldPrice: 1199990,
+    installments: 12,
+    freeShipping: true,
+    full: true,
+    condition: "Nuevo",
+    sold: 250,
+    stock: 15,
     rating: 5,
-    badge: "DESTACADO",
     image: "https://falabella.scene7.com/is/image/Falabella/127695184_1?wid=800&hei=800&qlt=70",
     gallery: [
       "https://falabella.scene7.com/is/image/Falabella/127695184_1?wid=800&hei=800&qlt=70",
@@ -30,11 +37,17 @@ const PRODUCTS = [
   },
   {
     id: 2,
-    name: "Samsung Galaxy S24 Ultra",
+    name: "Samsung Galaxy S24 Ultra 256GB",
     category: "smartphones",
     price: 999990,
+    oldPrice: 1099990,
+    installments: 12,
+    freeShipping: true,
+    full: true,
+    condition: "Nuevo",
+    sold: 180,
+    stock: 10,
     rating: 5,
-    badge: "NUEVO",
     image: "https://images.samsung.com/is/image/samsung/p6pim/cl/2401/gallery/cl-galaxy-s24-s928-sm-s928bztultl-thumb-539308401?$344_344_PNG$",
     gallery: [
       "https://images.samsung.com/is/image/samsung/p6pim/cl/2401/gallery/cl-galaxy-s24-s928-sm-s928bztultl-thumb-539308401?$344_344_PNG$"
@@ -52,9 +65,16 @@ const PRODUCTS = [
   },
   {
     id: 3,
-    name: "Audífonos JBL Tune Negro",
+    name: "Audífonos JBL Tune Inalámbricos Negro",
     category: "audio",
     price: 399990,
+    oldPrice: 499990,
+    installments: 10,
+    freeShipping: true,
+    full: false,
+    condition: "Nuevo",
+    sold: 540,
+    stock: 30,
     rating: 4,
     image: "https://http2.mlstatic.com/D_NQ_NP_998515-MLC31582106203_072019-O.webp",
     gallery: [
@@ -71,11 +91,17 @@ const PRODUCTS = [
   },
   {
     id: 4,
-    name: "Audífonos Gamer HP DHE-8011",
+    name: "Audífonos Gamer HP DHE-8011 con Micrófono",
     category: "gamer",
     price: 39990,
+    oldPrice: 59990,
+    installments: 6,
+    freeShipping: false,
+    full: true,
+    condition: "Nuevo",
+    sold: 1200,
+    stock: 80,
     rating: 4,
-    badge: "OFERTA",
     image: "assets/audifonos.jpg",
     gallery: ["assets/audifonos.jpg"],
     description: "Audífonos gamer HP DHE-8011 On-Ear con conector Jack 3.5mm, micrófono incorporado y sonido envolvente para tus partidas.",
@@ -89,9 +115,16 @@ const PRODUCTS = [
   },
   {
     id: 5,
-    name: "Honor Magic 5 Lite",
+    name: "Honor Magic 5 Lite 256GB",
     category: "smartphones",
     price: 500000,
+    oldPrice: 600000,
+    installments: 12,
+    freeShipping: true,
+    full: false,
+    condition: "Nuevo",
+    sold: 95,
+    stock: 20,
     rating: 4,
     image: "assets/honor.jpg",
     gallery: ["assets/honor.jpg"],
@@ -107,11 +140,17 @@ const PRODUCTS = [
   },
   {
     id: 6,
-    name: "Parlantes PC Gamer HP DHE-6005",
+    name: "Parlantes PC Gamer HP DHE-6005 RGB",
     category: "gamer",
     price: 45990,
+    oldPrice: 69990,
+    installments: 6,
+    freeShipping: false,
+    full: true,
+    condition: "Nuevo",
+    sold: 870,
+    stock: 60,
     rating: 5,
-    badge: "OFERTA",
     image: "assets/hp.jpg",
     gallery: ["assets/hp.jpg"],
     description: "Parlantes gamer HP DHE-6005 con iluminación LED RGB, sonido estéreo potente y conexión USB + Jack 3.5mm.",
@@ -125,9 +164,16 @@ const PRODUCTS = [
   },
   {
     id: 7,
-    name: "Parlante Bluetooth G",
+    name: "Parlante Bluetooth Portátil G Resistente al Agua",
     category: "audio",
     price: 24990,
+    oldPrice: 34990,
+    installments: 3,
+    freeShipping: false,
+    full: false,
+    condition: "Nuevo",
+    sold: 2100,
+    stock: 150,
     rating: 4,
     image: "assets/cargador.jpg",
     gallery: ["assets/cargador.jpg"],
@@ -142,11 +188,17 @@ const PRODUCTS = [
   },
   {
     id: 8,
-    name: "JBL PartyBox 710",
+    name: "Parlante JBL PartyBox 710 800W con Luces",
     category: "audio",
     price: 709990,
+    oldPrice: 899990,
+    installments: 12,
+    freeShipping: true,
+    full: true,
+    condition: "Nuevo",
+    sold: 60,
+    stock: 8,
     rating: 5,
-    badge: "TOP",
     image: "assets/jbl.jpg",
     gallery: ["assets/jbl.jpg"],
     description: "Parlante JBL PartyBox 710 con 800W de potencia, espectáculo de luces dinámico y sonido JBL de alta fidelidad para tus fiestas.",
@@ -160,10 +212,10 @@ const PRODUCTS = [
   }
 ];
 
-// Categorías disponibles para los filtros (clave -> etiqueta)
+// Categorías para filtros y accesos rápidos (clave -> { label, icon })
 const CATEGORIES = {
-  all: "Todos",
-  smartphones: "Smartphones",
-  gamer: "Gamer",
-  audio: "Audio"
+  all: { label: "Todos", icon: "🛍️" },
+  smartphones: { label: "Celulares", icon: "📱" },
+  gamer: { label: "Gamer", icon: "🎮" },
+  audio: { label: "Audio", icon: "🎧" }
 };
