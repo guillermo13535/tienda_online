@@ -1,5 +1,5 @@
 /* =========================================================
-   TecnoGamer - Renderizado por página (estructura Mercado Libre)
+   TecnoShop - Renderizado por página (estructura Mercado Libre)
    ========================================================= */
 
 (function () {
@@ -148,7 +148,7 @@
       return;
     }
 
-    document.title = `${p.name} | TecnoGamer`;
+    document.title = `${p.name} | TecnoShop`;
     const off = discountPct(p);
     const inst = installmentText(p);
     const catLabel = CATEGORIES[p.category] ? CATEGORIES[p.category].label : p.category;
@@ -223,7 +223,7 @@
           <button class="btn btn--outline btn--block" data-add="${p.id}" data-qty-from="detailQty" style="margin-top:10px">Agregar al carrito</button>
 
           <div class="buybox__seller">
-            <p>Vendido por <strong>TecnoGamer Oficial</strong></p>
+            <p>Vendido por <strong>TecnoShop Oficial</strong></p>
             <p class="muted">+1000 ventas · ⭐ Tienda oficial</p>
           </div>
           <ul class="buybox__perks">
@@ -317,25 +317,11 @@
             <p class="cart-resume__row"><span>Productos</span><span>${money(total)}</span></p>
             <p class="cart-resume__row"><span>Envío</span><span class="ship-free">Gratis</span></p>
             <p class="cart-resume__total"><span>Total</span><strong>${money(total)}</strong></p>
-            <div class="field" style="margin-top:14px">
-              <label for="payMethod">Medio de pago</label>
-              <select id="payMethod" class="select" style="width:100%">
-                <option value="Tarjeta de Crédito/Débito">Tarjeta de Crédito / Débito</option>
-                <option value="PayPal">PayPal</option>
-                <option value="Transferencia">Transferencia Bancaria</option>
-              </select>
-            </div>
-            <button class="btn btn--primary btn--block" id="checkoutBtn" style="margin-top:14px">Continuar compra</button>
+            <a class="btn btn--primary btn--block" href="checkout.html" style="margin-top:14px">Continuar compra</a>
           </aside>
         </div>`;
 
       document.getElementById("clearCart").addEventListener("click", () => { S.clearCart(); render(); });
-      document.getElementById("checkoutBtn").addEventListener("click", () => {
-        const metodo = document.getElementById("payMethod").value;
-        S.showToast(`¡Compra realizada con ${metodo}! 🎉 Total: ${money(total)}`);
-        S.clearCart();
-        render();
-      });
     }
 
     wrap.addEventListener("click", (e) => {
@@ -346,6 +332,191 @@
     });
 
     render();
+  }
+
+  /* ---------- Página: checkout (pasarela de pago demo) ---------- */
+  function luhnValid(num) {
+    const digits = num.replace(/\s+/g, "");
+    if (!/^\d{13,19}$/.test(digits)) return false;
+    let sum = 0, alt = false;
+    for (let i = digits.length - 1; i >= 0; i--) {
+      let n = parseInt(digits[i], 10);
+      if (alt) { n *= 2; if (n > 9) n -= 9; }
+      sum += n; alt = !alt;
+    }
+    return sum % 10 === 0;
+  }
+
+  function initCheckout() {
+    const wrap = document.getElementById("checkoutContent");
+    if (!wrap) return;
+
+    const cart = getCart();
+    const { total } = cartTotals();
+
+    if (cart.length === 0) {
+      wrap.innerHTML = `
+        <div class="cart-empty">
+          <p style="font-size:3rem">🛒</p>
+          <p>No tienes productos para pagar.</p>
+          <a class="btn btn--primary" href="productos.html" style="margin-top:16px">Ir a productos</a>
+        </div>`;
+      return;
+    }
+
+    const itemsHtml = cart.map((i) => {
+      const p = findProduct(i.id);
+      if (!p) return "";
+      return `<div class="co-item">
+        <img src="${p.image}" alt="${p.name}">
+        <div><span>${p.name}</span><small>${i.qty} x ${money(p.price)}</small></div>
+        <strong>${money(p.price * i.qty)}</strong>
+      </div>`;
+    }).join("");
+
+    wrap.innerHTML = `
+      <div class="checkout-layout">
+        <section class="panel">
+          <h3>Medio de pago</h3>
+          <div class="pay-methods" id="payMethods">
+            <label class="pay-method active"><input type="radio" name="pm" value="tarjeta" checked> 💳 Tarjeta de crédito / débito</label>
+            <label class="pay-method"><input type="radio" name="pm" value="paypal"> 💰 PayPal</label>
+            <label class="pay-method"><input type="radio" name="pm" value="transferencia"> 🏦 Transferencia bancaria</label>
+          </div>
+
+          <!-- Formulario tarjeta -->
+          <form id="cardForm" class="pay-panel" novalidate>
+            <div class="field">
+              <label for="cardNum">Número de tarjeta</label>
+              <input type="text" id="cardNum" inputmode="numeric" maxlength="19" placeholder="1234 5678 9012 3456" autocomplete="cc-number">
+              <span class="error" id="errCardNum"></span>
+            </div>
+            <div class="field">
+              <label for="cardName">Nombre en la tarjeta</label>
+              <input type="text" id="cardName" placeholder="Como aparece en la tarjeta" autocomplete="cc-name">
+              <span class="error" id="errCardName"></span>
+            </div>
+            <div class="co-row">
+              <div class="field">
+                <label for="cardExp">Vencimiento (MM/AA)</label>
+                <input type="text" id="cardExp" maxlength="5" placeholder="MM/AA" autocomplete="cc-exp">
+                <span class="error" id="errCardExp"></span>
+              </div>
+              <div class="field">
+                <label for="cardCvv">CVV</label>
+                <input type="text" id="cardCvv" inputmode="numeric" maxlength="4" placeholder="123" autocomplete="cc-csc">
+                <span class="error" id="errCardCvv"></span>
+              </div>
+            </div>
+            <p class="muted" style="font-size:.82rem">💡 Prueba con una tarjeta válida de test: <strong>4111 1111 1111 1111</strong></p>
+          </form>
+
+          <!-- PayPal -->
+          <div id="paypalPanel" class="pay-panel" hidden>
+            <p>Serás redirigido a PayPal para completar el pago de forma segura.</p>
+          </div>
+
+          <!-- Transferencia -->
+          <div id="transferPanel" class="pay-panel" hidden>
+            <p>Realiza la transferencia a la siguiente cuenta:</p>
+            <ul class="bank-data">
+              <li><span>Banco</span><strong>Banco TecnoShop</strong></li>
+              <li><span>Cuenta Corriente</span><strong>0012 3456 7890</strong></li>
+              <li><span>RUT</span><strong>76.543.210-K</strong></li>
+              <li><span>Email</span><strong>pagos@tecnoshop.cl</strong></li>
+            </ul>
+          </div>
+        </section>
+
+        <aside class="panel cart-resume">
+          <h3>Tu pedido</h3>
+          <div class="co-items">${itemsHtml}</div>
+          <p class="cart-resume__row"><span>Productos</span><span>${money(total)}</span></p>
+          <p class="cart-resume__row"><span>Envío</span><span class="ship-free">Gratis</span></p>
+          <p class="cart-resume__total"><span>Total</span><strong>${money(total)}</strong></p>
+          <button class="btn btn--primary btn--block" id="payBtn" style="margin-top:14px">Pagar ${money(total)}</button>
+          <a href="carrito.html" class="co-back">← Volver al carrito</a>
+        </aside>
+      </div>`;
+
+    // Cambiar panel según método
+    const panels = { tarjeta: "cardForm", paypal: "paypalPanel", transferencia: "transferPanel" };
+    function showPanel(method) {
+      Object.values(panels).forEach((id) => { document.getElementById(id).hidden = true; });
+      document.getElementById(panels[method]).hidden = false;
+      wrap.querySelectorAll(".pay-method").forEach((l) =>
+        l.classList.toggle("active", l.querySelector("input").value === method));
+    }
+    wrap.querySelectorAll('input[name="pm"]').forEach((r) =>
+      r.addEventListener("change", (e) => showPanel(e.target.value)));
+
+    // Formateo automático del número de tarjeta
+    const cardNum = document.getElementById("cardNum");
+    cardNum.addEventListener("input", () => {
+      let v = cardNum.value.replace(/\D/g, "").slice(0, 16);
+      cardNum.value = v.replace(/(.{4})/g, "$1 ").trim();
+    });
+    const cardExp = document.getElementById("cardExp");
+    cardExp.addEventListener("input", () => {
+      let v = cardExp.value.replace(/\D/g, "").slice(0, 4);
+      if (v.length >= 3) v = v.slice(0, 2) + "/" + v.slice(2);
+      cardExp.value = v;
+    });
+    document.getElementById("cardCvv").addEventListener("input", (e) => {
+      e.target.value = e.target.value.replace(/\D/g, "");
+    });
+
+    function validarTarjeta() {
+      const set = (id, msg) => (document.getElementById(id).textContent = msg);
+      let ok = true;
+      set("errCardNum", ""); set("errCardName", ""); set("errCardExp", ""); set("errCardCvv", "");
+
+      if (!luhnValid(cardNum.value)) { set("errCardNum", "Número de tarjeta no válido."); ok = false; }
+      if (document.getElementById("cardName").value.trim().length < 3) { set("errCardName", "Ingresa el nombre del titular."); ok = false; }
+
+      const exp = cardExp.value;
+      const m = exp.match(/^(\d{2})\/(\d{2})$/);
+      if (!m || +m[1] < 1 || +m[1] > 12) {
+        set("errCardExp", "Fecha inválida (MM/AA)."); ok = false;
+      } else {
+        const now = new Date();
+        const expDate = new Date(2000 + +m[2], +m[1]);
+        if (expDate <= now) { set("errCardExp", "La tarjeta está vencida."); ok = false; }
+      }
+      if (!/^\d{3,4}$/.test(document.getElementById("cardCvv").value)) { set("errCardCvv", "CVV inválido."); ok = false; }
+      return ok;
+    }
+
+    function finalizar(metodoLabel) {
+      const orden = "TS-" + Date.now().toString().slice(-8);
+      wrap.innerHTML = `
+        <div class="checkout-success">
+          <div class="checkout-success__ico">✅</div>
+          <h2>¡Compra realizada con éxito!</h2>
+          <p>Gracias por tu compra en TecnoShop.</p>
+          <div class="checkout-success__box">
+            <p><span>N° de orden</span><strong>${orden}</strong></p>
+            <p><span>Medio de pago</span><strong>${metodoLabel}</strong></p>
+            <p><span>Total pagado</span><strong>${money(total)}</strong></p>
+          </div>
+          <p class="muted">(Demostración: no se realizó ningún cobro real.)</p>
+          <a href="index.html" class="btn btn--primary" style="margin-top:18px">Volver al inicio</a>
+        </div>`;
+      S.clearCart();
+    }
+
+    document.getElementById("payBtn").addEventListener("click", () => {
+      const method = wrap.querySelector('input[name="pm"]:checked').value;
+      if (method === "tarjeta") {
+        if (!validarTarjeta()) { S.showToast("Revisa los datos de la tarjeta"); return; }
+        finalizar("Tarjeta de crédito/débito");
+      } else if (method === "paypal") {
+        S.showToast("Procesando pago con PayPal...");
+        setTimeout(() => finalizar("PayPal"), 900);
+      } else {
+        finalizar("Transferencia bancaria");
+      }
+    });
   }
 
   /* ---------- Delegación global: Agregar / Comprar ahora ---------- */
@@ -376,5 +547,6 @@
     if (page === "productos") initCatalog();
     if (page === "producto") initDetail();
     if (page === "carrito") initCart();
+    if (page === "checkout") initCheckout();
   });
 })();

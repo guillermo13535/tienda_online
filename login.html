@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Inicia sesión en TecnoGamer." />
-  <title>Iniciar Sesión | TecnoGamer</title>
+  <meta name="description" content="Inicia sesión en TecnoShop." />
+  <title>Iniciar Sesión | TecnoShop</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,7 +17,7 @@
     <div class="auth-wrap">
       <form class="auth-card" id="loginForm" novalidate>
         <h1>Iniciar Sesión</h1>
-        <p class="sub">Bienvenido de vuelta a TecnoGamer</p>
+        <p class="sub">Bienvenido de vuelta a TecnoShop</p>
 
         <div class="field">
           <label for="email">Correo electrónico</label>
@@ -62,7 +62,7 @@
       } else { errPass.textContent = ""; }
 
       if (ok) {
-        localStorage.setItem("tecnogamer_sesion", email.value.trim());
+        localStorage.setItem("tecnoshop_sesion", email.value.trim());
         window.Store.showToast("✓ Sesión iniciada correctamente");
         setTimeout(() => (window.location.href = "index.html"), 1200);
       }

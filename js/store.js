@@ -1,5 +1,5 @@
 /* =========================================================
-   TecnoGamer - Lógica compartida (estructura estilo Mercado Libre)
+   TecnoShop - Lógica compartida (estructura estilo Mercado Libre)
    - Carrito (localStorage)
    - Header con buscador + barra de categorías
    - Footer multi-columna
@@ -10,7 +10,7 @@
 (function () {
   "use strict";
 
-  const CART_KEY = "tecnogamer_carrito";
+  const CART_KEY = "tecnoshop_carrito";
 
   /* ---------- Helpers de formato ---------- */
   const money = (n) => "$" + Number(n).toLocaleString("es-CL");
@@ -129,7 +129,7 @@
   /* ---------- Header y footer estilo Mercado Libre ---------- */
   function renderChrome() {
     const page = document.body.dataset.page || "";
-    const sesion = localStorage.getItem("tecnogamer_sesion");
+    const sesion = localStorage.getItem("tecnoshop_sesion");
 
     const catLinks = Object.entries(CATEGORIES)
       .map(([key, c]) =>
@@ -145,7 +145,7 @@
             <div class="container ml-header__row">
               <a href="index.html" class="brand">
                 <span class="brand__icon">⬢</span>
-                <span class="brand__text">TECNO<span>GAMER</span></span>
+                <span class="brand__text">TECNO<span>SHOP</span></span>
               </a>
 
               <form class="ml-search" id="searchForm" role="search">
@@ -203,7 +203,7 @@
       const logout = document.getElementById("logoutLink");
       if (logout) logout.addEventListener("click", (e) => {
         e.preventDefault();
-        localStorage.removeItem("tecnogamer_sesion");
+        localStorage.removeItem("tecnoshop_sesion");
         showToast("Sesión cerrada");
         setTimeout(() => location.reload(), 800);
       });
@@ -216,7 +216,7 @@
         <footer class="ml-footer">
           <div class="container ml-footer__top">
             <div>
-              <h5>Acerca de TecnoGamer</h5>
+              <h5>Acerca de TecnoShop</h5>
               <a href="#">Quiénes somos</a>
               <a href="#">Trabaja con nosotros</a>
               <a href="#">Términos y condiciones</a>
@@ -249,7 +249,7 @@
               </div>
             </div>
           </div>
-          <p class="ml-footer__copy">© ${year} TecnoGamer - Proyecto demostrativo. Tienda de tecnología y artículos gamer · Santiago, Chile.</p>
+          <p class="ml-footer__copy">© ${year} TecnoShop - Proyecto demostrativo. Tienda de tecnología y artículos gamer · Santiago, Chile.</p>
         </footer>`;
     }
   }

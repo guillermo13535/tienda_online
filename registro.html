@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Crea tu cuenta en TecnoGamer." />
-  <title>Registrarse | TecnoGamer</title>
+  <meta name="description" content="Crea tu cuenta en TecnoShop." />
+  <title>Registrarse | TecnoShop</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,7 +17,7 @@
     <div class="auth-wrap">
       <form class="auth-card" id="registroForm" novalidate>
         <h1>Crear Cuenta</h1>
-        <p class="sub">Únete a TecnoGamer en segundos</p>
+        <p class="sub">Únete a TecnoShop en segundos</p>
 
         <div class="field">
           <label for="nombre">Nombre</label>
@@ -79,7 +79,7 @@
       if (v("password") !== v("password2")) { setErr("errPass2", "Las contraseñas no coinciden."); ok = false; }
 
       if (ok) {
-        window.Store.showToast("✓ ¡Registro exitoso! Bienvenido a TecnoGamer");
+        window.Store.showToast("✓ ¡Registro exitoso! Bienvenido a TecnoShop");
         setTimeout(() => (window.location.href = "login.html"), 1400);
       }
     });

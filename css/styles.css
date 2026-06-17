@@ -412,6 +412,37 @@ section.block { padding: 40px 0; }
 .ml-paychips span { background: var(--card); border: 1px solid var(--line); padding: 6px 10px; border-radius: 8px; font-size: .8rem; color: var(--muted); }
 .ml-footer__copy { text-align: center; color: var(--muted); padding: 18px; border-top: 1px solid var(--line); font-size: .85rem; }
 
+/* ===== Checkout / pasarela de pago ===== */
+.checkout-note { color: var(--muted); margin-bottom: 18px; font-size: .92rem; }
+.checkout-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
+.pay-methods { display: grid; gap: 10px; margin-bottom: 18px; }
+.pay-method {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--line); border-radius: 10px;
+  padding: 12px 14px; cursor: pointer; font-weight: 600; transition: border-color .2s, background .2s;
+}
+.pay-method:hover { border-color: var(--primary); }
+.pay-method.active { border-color: var(--primary); background: var(--card-2); }
+.pay-method input { accent-color: var(--primary); }
+.pay-panel { margin-top: 6px; }
+.co-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.bank-data { list-style: none; display: grid; gap: 8px; margin-top: 10px; }
+.bank-data li { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--line); padding-bottom: 6px; color: var(--muted); }
+.bank-data strong { color: var(--text); }
+.co-items { display: grid; gap: 12px; margin-bottom: 14px; max-height: 280px; overflow-y: auto; }
+.co-item { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; }
+.co-item img { width: 44px; height: 44px; object-fit: contain; background: #fff; border-radius: 6px; padding: 3px; }
+.co-item span { display: block; font-size: .88rem; line-height: 1.2; }
+.co-item small { color: var(--muted); font-size: .8rem; }
+.co-back { display: block; text-align: center; margin-top: 12px; color: var(--primary); font-weight: 600; }
+.checkout-success { text-align: center; padding: 40px 20px; max-width: 480px; margin: 0 auto; }
+.checkout-success__ico { font-size: 3.5rem; }
+.checkout-success h2 { font-family: "Orbitron", sans-serif; margin: 10px 0; }
+.checkout-success__box { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; margin: 18px 0; }
+.checkout-success__box p { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.checkout-success__box p:last-child { border-bottom: none; }
+.checkout-success__box span { color: var(--muted); }
+
 /* ===== Toast ===== */
 .toast {
   position: fixed; bottom: 24px; left: 50%;
@@ -431,6 +462,7 @@ section.block { padding: 40px 0; }
   .pdp__buybox { position: static; }
   .cart-layout { grid-template-columns: 1fr; }
   .cart-resume { position: static; }
+  .checkout-layout { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
   .ml-header__row { flex-wrap: wrap; height: auto; padding: 10px 0; gap: 10px; }

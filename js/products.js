@@ -1,5 +1,5 @@
 /* =========================================================
-   TecnoGamer - Catálogo central de productos
+   TecnoShop - Catálogo central de productos
    Precios en pesos chilenos (CLP) como enteros.
    Estructura estilo Mercado Libre: precio anterior (descuento),
    cuotas, envío gratis, vendidos, stock, condición, etc.
