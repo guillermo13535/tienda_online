@@ -477,7 +477,7 @@
           <h3>Medio de pago</h3>
           <div class="pay-methods" id="payMethods">
             <label class="pay-method active"><input type="radio" name="pm" value="tarjeta" checked> 💳 Tarjeta de crédito / débito</label>
-            <label class="pay-method"><input type="radio" name="pm" value="paypal"> 💰 PayPal</label>
+            <label class="pay-method"><input type="radio" name="pm" value="mercadopago"> 💙 Mercado Pago</label>
             <label class="pay-method"><input type="radio" name="pm" value="transferencia"> 🏦 Transferencia bancaria</label>
           </div>
 
@@ -508,10 +508,10 @@
             <p class="muted" style="font-size:.82rem">💡 Prueba con una tarjeta válida de test: <strong>4111 1111 1111 1111</strong></p>
           </form>
 
-          <!-- PayPal -->
-          <div id="paypalPanel" class="pay-panel" hidden>
-            <p>Paga de forma segura con tu cuenta PayPal (modo demostración).</p>
-            <div id="paypalBtns" style="margin-top:10px"></div>
+          <!-- Mercado Pago -->
+          <div id="mpPanel" class="pay-panel" hidden>
+            <p>Paga de forma segura con Mercado Pago (tarjetas, débito, saldo y más).</p>
+            <div id="mpBtns" style="margin-top:10px"></div>
           </div>
 
           <!-- Transferencia -->
@@ -544,26 +544,36 @@
       </div>`;
 
     // Cambiar panel según método
-    const panels = { tarjeta: "cardForm", paypal: "paypalPanel", transferencia: "transferPanel" };
-    let paypalRendered = false;
-    let usdRate = 950; // fallback; se actualiza con datos del Banco Central
+    const panels = { tarjeta: "cardForm", mercadopago: "mpPanel", transferencia: "transferPanel" };
+    let mpRendered = false;
 
-    function renderPaypal() {
-      const box = document.getElementById("paypalBtns");
-      if (!window.paypal) { box.innerHTML = "<p class='muted'>No se pudo cargar el SDK de PayPal.</p>"; return; }
-      if (paypalRendered) return;
-      paypalRendered = true;
-      if (window.Integrations) {
-        window.Integrations.getIndicators().then((d) => { usdRate = d.dolar.valor; }).catch(() => {});
+    async function renderMP() {
+      const box = document.getElementById("mpBtns");
+      const I = window.Integrations;
+
+      function demoButton(msg) {
+        box.innerHTML = `<p class="muted" style="font-size:.85rem">${msg}</p>
+          <button class="btn btn--primary btn--block" id="mpDemo">Pagar con Mercado Pago (demo)</button>`;
+        document.getElementById("mpDemo").addEventListener("click", () => finalizar("Mercado Pago"));
       }
-      paypal.Buttons({
-        style: { color: "blue", shape: "pill", label: "pay" },
-        createOrder: (data, actions) => actions.order.create({
-          purchase_units: [{ amount: { value: (total / usdRate).toFixed(2) }, description: "Compra TecnoShop" }]
-        }),
-        onApprove: (data, actions) => actions.order.capture().then(() => finalizar("PayPal")),
-        onError: () => S.showToast("PayPal está en modo demostración")
-      }).render("#paypalBtns");
+
+      if (mpRendered) return;
+      mpRendered = true;
+
+      // Si Mercado Pago está configurado, crear preferencia en el backend y mostrar el botón oficial
+      if (I && I.mpConfigured && I.mpConfigured()) {
+        box.innerHTML = "<p class='muted'>Cargando Mercado Pago...</p>";
+        try {
+          const pref = await I.crearPreferencia(getCart());
+          if (pref && pref.demo) { demoButton("Mercado Pago en modo demostración (falta configurar el Access Token en el servidor)."); return; }
+          box.innerHTML = '<div id="mp-container"></div>';
+          await I.renderMercadoPago("mp-container", pref.id);
+        } catch (e) {
+          demoButton("No se pudo iniciar Mercado Pago (" + e.message + ").");
+        }
+      } else {
+        demoButton("Mercado Pago en modo demostración (configura tu Public Key para el pago real).");
+      }
     }
 
     function showPanel(method) {
@@ -572,7 +582,7 @@
       wrap.querySelectorAll(".pay-method").forEach((l) =>
         l.classList.toggle("active", l.querySelector("input").value === method));
       const payBtn = document.getElementById("payBtn");
-      if (method === "paypal") { payBtn.style.display = "none"; renderPaypal(); }
+      if (method === "mercadopago") { payBtn.style.display = "none"; renderMP(); }
       else { payBtn.style.display = ""; }
     }
     wrap.querySelectorAll('input[name="pm"]').forEach((r) =>
@@ -698,7 +708,7 @@
       } else if (method === "transferencia") {
         finalizar("Transferencia bancaria");
       }
-      // PayPal usa sus propios botones (data-buy se maneja en renderPaypal)
+      // Mercado Pago usa su propio botón (se renderiza en renderMP)
     });
 
     // Georreferenciación: calcular envío + clima a la ubicación del cliente

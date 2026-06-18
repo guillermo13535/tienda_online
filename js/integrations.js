@@ -117,12 +117,41 @@ window.Integrations = (function () {
     return emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, params);
   }
 
+  /* ---------- 7. MERCADO PAGO ---------- */
+  // Public Key de tu cuenta de Mercado Pago (https://www.mercadopago.cl/developers).
+  // El backend usa el Access Token (secreto) para crear la preferencia de pago.
+  const MP_CONFIG = {
+    publicKey: "TU_PUBLIC_KEY",  // <-- reemplazar (APP_USR-xxxx o TEST-xxxx)
+    apiBase: ""                  // "" = mismo origen (cuando corre con node server.js)
+  };
+  function mpConfigured() {
+    return MP_CONFIG.publicKey && !MP_CONFIG.publicKey.startsWith("TU_");
+  }
+  // Pide al backend que cree la preferencia de pago (de forma segura)
+  async function crearPreferencia(items) {
+    const res = await fetch((MP_CONFIG.apiBase || "") + "/api/pago/preferencia", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items })
+    });
+    if (!res.ok) throw new Error("No se pudo crear la preferencia de pago");
+    return res.json();
+  }
+  // Renderiza el botón oficial de Mercado Pago (Checkout Pro)
+  async function renderMercadoPago(containerId, preferenceId) {
+    if (!window.MercadoPago) throw new Error("SDK de Mercado Pago no cargado");
+    const mp = new MercadoPago(MP_CONFIG.publicKey, { locale: "es-CL" });
+    const bricks = mp.bricks();
+    await bricks.create("wallet", containerId, { initialization: { preferenceId } });
+  }
+
   return {
     getPosition, reverseGeocode,
     getWeather, weatherText,
     getIndicators,
     sendWebhook,
     buildSoapEnvelope, soapNumberToWords,
-    emailConfigured, sendBoletaEmail
+    emailConfigured, sendBoletaEmail,
+    mpConfigured, crearPreferencia, renderMercadoPago
   };
 })();

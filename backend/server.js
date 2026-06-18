@@ -165,6 +165,44 @@ async function api(req, res, p) {
     return json(res, 201, order);
   }
 
+  // MERCADO PAGO: crear preferencia de pago (seguro, con el Access Token del servidor)
+  if (p === "/api/pago/preferencia" && m === "POST") {
+    const token = process.env.MP_ACCESS_TOKEN;
+    const { items } = await readBody(req);
+    if (!token) {
+      // Sin credenciales: responder en modo demostración
+      return json(res, 200, { demo: true, message: "Define MP_ACCESS_TOKEN para activar el pago real" });
+    }
+    // Construir los ítems con precios tomados del servidor (no se confía en el front)
+    const mpItems = [];
+    for (const it of (items || [])) {
+      const prod = db.data.products.find((x) => x.id === Number(it.id));
+      if (prod) mpItems.push({ title: prod.name, quantity: it.qty, unit_price: prod.price, currency_id: "CLP" });
+    }
+    if (!mpItems.length) return json(res, 400, { error: "Carrito vacío" });
+    const host = req.headers.host;
+    try {
+      const r = await fetch("https://api.mercadopago.com/checkout/preferences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+        body: JSON.stringify({
+          items: mpItems,
+          back_urls: {
+            success: `http://${host}/pedidos.html`,
+            failure: `http://${host}/carrito.html`,
+            pending: `http://${host}/pedidos.html`
+          },
+          auto_return: "approved"
+        })
+      });
+      const data = await r.json();
+      if (!r.ok) return json(res, 502, { error: "Error de Mercado Pago", detalle: data });
+      return json(res, 200, { id: data.id, init_point: data.init_point });
+    } catch (e) {
+      return json(res, 502, { error: "No se pudo conectar con Mercado Pago: " + e.message });
+    }
+  }
+
   return json(res, 404, { error: "Ruta no encontrada" });
 }
 

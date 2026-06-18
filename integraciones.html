@@ -12,8 +12,8 @@
   <!-- Leaflet (mapas OpenStreetMap) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- PayPal SDK (sandbox de demostración) -->
-  <script src="https://www.paypal.com/sdk/js?client-id=test&currency=USD"></script>
+  <!-- Mercado Pago SDK -->
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
 </head>
 <body data-page="integraciones">
   <div data-include="header"></div>
@@ -26,10 +26,11 @@
 
       <!-- 1. PASARELA DE PAGO -->
       <section class="integra-card">
-        <h3>💳 Pasarela de pago — PayPal</h3>
-        <p class="muted">Botones reales de PayPal (modo sandbox/demostración). API REST de PayPal.</p>
-        <p>Monto de ejemplo: <strong>US$ 9.99</strong></p>
-        <div id="paypalBox" style="margin-top:12px"></div>
+        <h3>💳 Pasarela de pago — Mercado Pago</h3>
+        <p class="muted">Integración con Mercado Pago (Checkout Pro). El backend crea la preferencia de pago de forma segura con el Access Token.</p>
+        <p>Monto de ejemplo: <strong>$19.990 CLP</strong></p>
+        <div id="mpBox" style="margin-top:12px"></div>
+        <button class="btn btn--primary" id="btnMpDemo">Pagar con Mercado Pago (demo)</button>
         <div class="integra-result" id="payResult"></div>
       </section>
 
@@ -108,21 +109,24 @@
     let dolarValor = null;
     let mapa = null;
 
-    /* 1. PayPal */
-    if (window.paypal) {
-      paypal.Buttons({
-        style: { color: "blue", shape: "pill", label: "pay" },
-        createOrder: (data, actions) => actions.order.create({
-          purchase_units: [{ amount: { value: "9.99" }, description: "Compra demo TecnoShop" }]
-        }),
-        onApprove: (data, actions) => actions.order.capture().then((details) => {
-          show("payResult", `✅ Pago aprobado (sandbox).<br>ID de orden: <strong>${data.orderID}</strong><br>Comprador: ${details?.payer?.name?.given_name || "Demo"}`, "ok");
-        }),
-        onError: () => show("payResult", "⚠️ El SDK de PayPal está en modo demo (client-id=test). En producción se usa un client-id real.", "warn")
-      }).render("#paypalBox");
-    } else {
-      show("payResult", "No se pudo cargar el SDK de PayPal (revisa tu conexión).", "warn");
-    }
+    /* 1. Mercado Pago (demo) */
+    document.getElementById("btnMpDemo").addEventListener("click", async () => {
+      const I = window.Integrations;
+      if (I && I.mpConfigured && I.mpConfigured()) {
+        show("payResult", "⏳ Creando preferencia de pago en el backend...");
+        try {
+          const pref = await I.crearPreferencia([{ id: 7, qty: 1 }]);
+          if (pref.demo) { show("payResult", "El backend respondió en modo demo (falta MP_ACCESS_TOKEN).", "warn"); return; }
+          document.getElementById("mpBox").innerHTML = '<div id="mp-container"></div>';
+          await I.renderMercadoPago("mp-container", pref.id);
+          show("payResult", "✅ Botón de Mercado Pago generado con la preferencia real.", "ok");
+        } catch (e) {
+          show("payResult", "⚠️ " + e.message + " (¿está corriendo el backend con node server.js?)", "warn");
+        }
+      } else {
+        show("payResult", "✅ Pago simulado con Mercado Pago. En producción, el backend crea la preferencia con tu Access Token y el cliente paga en Mercado Pago (tarjeta, débito, saldo).", "ok");
+      }
+    });
 
     /* 2. Georreferenciación */
     document.getElementById("btnGeo").addEventListener("click", async () => {

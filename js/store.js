@@ -337,7 +337,7 @@
               <h5>Medios de pago</h5>
               <div class="ml-paychips">
                 <span>💳 Visa</span><span>💳 Mastercard</span>
-                <span>🏦 Transferencia</span><span>💰 PayPal</span>
+                <span>🏦 Transferencia</span><span>💙 Mercado Pago</span>
               </div>
             </div>
           </div>
