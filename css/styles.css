@@ -468,6 +468,23 @@ section.block { padding: 40px 0; }
 .conv-box { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 14px; }
 .conv-box label { font-weight: 600; font-size: .9rem; }
 
+/* ===== Admin CRUD ===== */
+.admin-bar { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin: 30px 0 16px; }
+.btn-sm { padding: 6px 12px; font-size: .82rem; }
+.admin-form { margin-bottom: 20px; }
+.admin-form h3 { font-family: "Orbitron", sans-serif; margin-bottom: 14px; }
+.admin-form__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px; }
+
+/* ===== Mis pedidos ===== */
+.order-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+.order-card__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 12px; }
+.order-card__total { font-family: "Orbitron", sans-serif; font-size: 1.3rem; color: var(--primary); }
+.order-card__items { list-style: none; display: grid; gap: 6px; margin-bottom: 12px; }
+.order-card__items li { display: flex; justify-content: space-between; color: var(--muted); }
+.order-card__items strong { color: var(--text); }
+.order-card__foot { font-size: .9rem; color: var(--muted); }
+.badge-ok { color: var(--green); font-weight: 700; }
+
 /* ===== Toast ===== */
 .toast {
   position: fixed; bottom: 24px; left: 50%;

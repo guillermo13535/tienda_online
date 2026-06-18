@@ -538,17 +538,32 @@
 
     function finalizar(metodoLabel) {
       const orden = "TS-" + Date.now().toString().slice(-8);
+      const user = S.Auth.current();
+      const cartSnapshot = getCart();
+      const items = cartSnapshot.map((i) => {
+        const p = findProduct(i.id);
+        return { id: i.id, nombre: p ? p.name : "", qty: i.qty, price: p ? p.price : 0 };
+      });
+
+      // Guardar el pedido (historial "Mis pedidos")
+      S.Orders.add({
+        id: orden,
+        email: user ? user.email : "invitado",
+        items, total, metodo: metodoLabel,
+        fecha: new Date().toISOString()
+      });
+
+      // Descontar el stock comprado
+      S.decrementStock(cartSnapshot);
+
       // Webhook: notificar la compra a un sistema externo (POST)
       if (window.Integrations) {
-        const items = getCart().map((i) => {
-          const p = findProduct(i.id);
-          return { id: i.id, nombre: p ? p.name : "", qty: i.qty };
-        });
         window.Integrations.sendWebhook("https://jsonplaceholder.typicode.com/posts", {
           evento: "compra_realizada", orden, metodo: metodoLabel, total, items, fecha: new Date().toISOString()
         }).then((r) => console.log("Webhook enviado, HTTP", r.status))
           .catch((e) => console.warn("Webhook falló:", e.message));
       }
+
       wrap.innerHTML = `
         <div class="checkout-success">
           <div class="checkout-success__ico">✅</div>
@@ -560,7 +575,8 @@
             <p><span>Total pagado</span><strong>${money(total)}</strong></p>
           </div>
           <p class="muted">(Demostración: no se realizó ningún cobro real.)</p>
-          <a href="index.html" class="btn btn--primary" style="margin-top:18px">Volver al inicio</a>
+          <a href="pedidos.html" class="btn btn--primary" style="margin-top:18px">Ver mis pedidos</a>
+          <a href="index.html" class="btn btn--outline" style="margin-top:18px">Volver al inicio</a>
         </div>`;
       S.clearCart();
     }
@@ -607,6 +623,180 @@
     }
   }
 
+  /* ---------- Página: Mis pedidos ---------- */
+  function initPedidos() {
+    const wrap = document.getElementById("pedidosContent");
+    if (!wrap) return;
+    const user = S.Auth.current();
+    if (!user) {
+      wrap.innerHTML = `<div class="cart-empty"><p style="font-size:3rem">🔒</p>
+        <p>Debes iniciar sesión para ver tus pedidos.</p>
+        <a class="btn btn--primary" href="login.html" style="margin-top:14px">Iniciar sesión</a></div>`;
+      return;
+    }
+    const orders = S.Orders.forCurrent();
+    if (!orders.length) {
+      wrap.innerHTML = `<div class="cart-empty"><p style="font-size:3rem">📦</p>
+        <p>Aún no tienes pedidos.</p>
+        <a class="btn btn--primary" href="productos.html" style="margin-top:14px">Ir a comprar</a></div>`;
+      return;
+    }
+    wrap.innerHTML = orders.map((o) => {
+      const fecha = new Date(o.fecha).toLocaleString("es-CL");
+      const itemsHtml = o.items.map((it) =>
+        `<li><span>${it.qty} x ${it.nombre}</span><strong>${money(it.price * it.qty)}</strong></li>`).join("");
+      return `<div class="order-card">
+        <div class="order-card__head">
+          <div><strong>Orden ${o.id}</strong><br><small class="muted">${fecha}${user.role === "admin" ? " · " + o.email : ""}</small></div>
+          <div class="order-card__total">${money(o.total)}</div>
+        </div>
+        <ul class="order-card__items">${itemsHtml}</ul>
+        <div class="order-card__foot">💳 ${o.metodo} · <span class="badge-ok">✓ Confirmado</span></div>
+      </div>`;
+    }).join("");
+  }
+
+  /* ---------- Página: Admin (CRUD de productos, protegido) ---------- */
+  function initAdmin() {
+    const wrap = document.getElementById("adminContent");
+    if (!wrap) return;
+    if (!S.Auth.isAdmin()) {
+      wrap.innerHTML = `<h2 class="section-title">Acceso restringido</h2>
+        <div class="cart-empty"><p style="font-size:3rem">🔒</p>
+        <p>Debes iniciar sesión como administrador.</p>
+        <p class="muted">Demo: admin@tecnoshop.cl / admin123</p>
+        <a class="btn btn--primary" href="login.html" style="margin-top:14px">Iniciar sesión</a></div>`;
+      return;
+    }
+    let editId = null;
+
+    function render() {
+      const totalProductos = PRODUCTS.length;
+      const categorias = new Set(PRODUCTS.map((p) => p.category)).size;
+      const valorInventario = PRODUCTS.reduce((s, p) => s + p.price * p.stock, 0);
+      const sinStock = PRODUCTS.filter((p) => p.stock <= 0).length;
+      const pedidos = S.Orders.all().length;
+
+      wrap.innerHTML = `
+        <h2 class="section-title">Panel de Administración</h2>
+        <div class="stat-row">
+          <div class="stat"><div class="num">${totalProductos}</div><div class="lbl">Productos</div></div>
+          <div class="stat"><div class="num">${categorias}</div><div class="lbl">Categorías</div></div>
+          <div class="stat"><div class="num">${money(valorInventario)}</div><div class="lbl">Valor inventario</div></div>
+          <div class="stat"><div class="num">${pedidos}</div><div class="lbl">Pedidos</div></div>
+          <div class="stat"><div class="num">${sinStock}</div><div class="lbl">Sin stock</div></div>
+        </div>
+
+        <div class="admin-bar">
+          <h2 class="section-title" style="margin:0">Gestión de productos</h2>
+          <div style="display:flex; gap:10px; flex-wrap:wrap">
+            <button class="btn btn--primary" id="btnNuevo">+ Nuevo producto</button>
+            <button class="btn btn--outline" id="btnReset">Restablecer catálogo</button>
+          </div>
+        </div>
+
+        <div id="formBox"></div>
+
+        <div style="overflow-x:auto">
+          <table class="cart-table">
+            <thead><tr><th>ID</th><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Acciones</th></tr></thead>
+            <tbody>${PRODUCTS.map((p) => `
+              <tr>
+                <td data-label="ID">${p.id}</td>
+                <td data-label="Producto">${p.name}</td>
+                <td data-label="Categoría">${p.category}</td>
+                <td data-label="Precio">${money(p.price)}</td>
+                <td data-label="Stock">${p.stock <= 0 ? '<span style="color:var(--accent)">Agotado</span>' : p.stock}</td>
+                <td data-label="Acciones">
+                  <button class="btn btn--outline btn-sm" data-edit="${p.id}">Editar</button>
+                  <button class="btn btn--danger btn-sm" data-del="${p.id}">Eliminar</button>
+                </td>
+              </tr>`).join("")}</tbody>
+          </table>
+        </div>`;
+
+      document.getElementById("btnNuevo").addEventListener("click", () => { editId = null; showForm(); });
+      document.getElementById("btnReset").addEventListener("click", () => {
+        if (confirm("¿Restablecer el catálogo a los productos originales? Se perderán tus cambios.")) {
+          S.resetProducts(); render(); S.showToast("Catálogo restablecido");
+        }
+      });
+      wrap.querySelectorAll("[data-edit]").forEach((b) =>
+        b.addEventListener("click", () => { editId = Number(b.dataset.edit); showForm(); }));
+      wrap.querySelectorAll("[data-del]").forEach((b) =>
+        b.addEventListener("click", () => {
+          const id = Number(b.dataset.del);
+          if (confirm("¿Eliminar este producto?")) {
+            const idx = PRODUCTS.findIndex((p) => p.id === id);
+            if (idx >= 0) PRODUCTS.splice(idx, 1);
+            S.saveProducts(); render(); S.showToast("Producto eliminado");
+          }
+        }));
+    }
+
+    function showForm() {
+      const p = editId ? S.findProduct(editId) : null;
+      const opts = Object.keys(CATEGORIES).filter((k) => k !== "all")
+        .map((k) => `<option value="${k}" ${p && p.category === k ? "selected" : ""}>${CATEGORIES[k].label}</option>`).join("");
+      const box = document.getElementById("formBox");
+      box.innerHTML = `
+        <form class="panel admin-form" id="prodForm">
+          <h3>${p ? "Editar producto" : "Nuevo producto"}</h3>
+          <div class="admin-form__grid">
+            <div class="field"><label>Nombre</label><input id="f_name" value="${p ? p.name.replace(/"/g, "&quot;") : ""}"></div>
+            <div class="field"><label>Categoría</label><select id="f_cat">${opts}</select></div>
+            <div class="field"><label>Precio (CLP)</label><input id="f_price" type="number" value="${p ? p.price : ""}"></div>
+            <div class="field"><label>Precio anterior (opcional)</label><input id="f_old" type="number" value="${p && p.oldPrice ? p.oldPrice : ""}"></div>
+            <div class="field"><label>Stock</label><input id="f_stock" type="number" value="${p ? p.stock : 10}"></div>
+            <div class="field"><label>Cuotas</label><input id="f_inst" type="number" value="${p ? p.installments : 12}"></div>
+            <div class="field"><label>Rating (1-5)</label><input id="f_rating" type="number" min="1" max="5" value="${p ? p.rating : 5}"></div>
+            <div class="field"><label>Imagen (URL)</label><input id="f_img" value="${p ? p.image : ""}" placeholder="https://... o assets/..."></div>
+          </div>
+          <div class="field"><label>Descripción</label><input id="f_desc" value="${p ? p.description.replace(/"/g, "&quot;") : ""}"></div>
+          <label style="display:flex; gap:8px; align-items:center; margin-bottom:12px">
+            <input type="checkbox" id="f_ship" ${!p || p.freeShipping ? "checked" : ""}> Envío gratis
+          </label>
+          <div style="display:flex; gap:10px">
+            <button type="submit" class="btn btn--primary">Guardar</button>
+            <button type="button" class="btn btn--outline" id="btnCancel">Cancelar</button>
+          </div>
+        </form>`;
+      box.scrollIntoView({ behavior: "smooth" });
+      document.getElementById("btnCancel").addEventListener("click", () => { box.innerHTML = ""; });
+      document.getElementById("prodForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const name = document.getElementById("f_name").value.trim();
+        const price = parseInt(document.getElementById("f_price").value, 10);
+        if (!name || !price) { S.showToast("Completa al menos nombre y precio"); return; }
+        const data = {
+          name, category: document.getElementById("f_cat").value, price,
+          oldPrice: parseInt(document.getElementById("f_old").value, 10) || 0,
+          stock: parseInt(document.getElementById("f_stock").value, 10) || 0,
+          installments: parseInt(document.getElementById("f_inst").value, 10) || 1,
+          rating: parseInt(document.getElementById("f_rating").value, 10) || 5,
+          image: document.getElementById("f_img").value.trim() || "assets/placeholder.svg",
+          description: document.getElementById("f_desc").value.trim(),
+          freeShipping: document.getElementById("f_ship").checked
+        };
+        if (editId) {
+          const prod = S.findProduct(editId);
+          Object.assign(prod, data);
+          prod.gallery = [data.image];
+          if (!prod.specs) prod.specs = {};
+        } else {
+          const newId = Math.max(0, ...PRODUCTS.map((p) => p.id)) + 1;
+          PRODUCTS.push({ id: newId, ...data, gallery: [data.image], sold: 0, full: false, condition: "Nuevo", specs: { "Garantía": "6 meses" } });
+        }
+        S.saveProducts();
+        box.innerHTML = "";
+        render();
+        S.showToast(editId ? "Producto actualizado" : "Producto agregado");
+      });
+    }
+
+    render();
+  }
+
   /* ---------- Delegación global: Agregar / Comprar ahora ---------- */
   function readQty(btn) {
     let qty = 1;
@@ -636,5 +826,7 @@
     if (page === "producto") initDetail();
     if (page === "carrito") initCart();
     if (page === "checkout") initCheckout();
+    if (page === "pedidos") initPedidos();
+    if (page === "admin") initAdmin();
   });
 })();

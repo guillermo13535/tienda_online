@@ -1,9 +1,8 @@
 /* =========================================================
    TecnoShop - Lógica compartida (estructura estilo Mercado Libre)
-   - Carrito (localStorage)
-   - Header con buscador + barra de categorías
+   - Carrito, productos (persistentes), usuarios, pedidos
+   - Header con buscador + barra de categorías + cuenta
    - Footer multi-columna
-   - Helpers de formato, descuentos y cuotas
    Se carga DESPUÉS de products.js en todas las páginas.
    ========================================================= */
 
@@ -11,72 +10,78 @@
   "use strict";
 
   const CART_KEY = "tecnoshop_carrito";
+  const PRODUCTS_KEY = "tecnoshop_productos";
+  const USERS_KEY = "tecnoshop_usuarios";
+  const SESSION_KEY = "tecnoshop_sesion";
+  const ORDERS_KEY = "tecnoshop_pedidos";
+
+  // Copia del catálogo original (para poder restablecerlo desde Admin)
+  const SEED = JSON.parse(JSON.stringify(PRODUCTS));
+
+  /* ---------- Persistencia de productos ---------- */
+  function loadProducts() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(PRODUCTS_KEY));
+      if (Array.isArray(stored) && stored.length) {
+        PRODUCTS.length = 0;
+        stored.forEach((p) => PRODUCTS.push(p));
+      }
+    } catch (_) {}
+  }
+  function saveProducts() {
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(PRODUCTS));
+  }
+  function resetProducts() {
+    PRODUCTS.length = 0;
+    JSON.parse(JSON.stringify(SEED)).forEach((p) => PRODUCTS.push(p));
+    saveProducts();
+  }
+  loadProducts();
 
   /* ---------- Helpers de formato ---------- */
   const money = (n) => "$" + Number(n).toLocaleString("es-CL");
-
-  function findProduct(id) {
-    return PRODUCTS.find((p) => p.id === Number(id));
-  }
-
-  function stars(n) {
-    return "★".repeat(n) + "☆".repeat(5 - n);
-  }
-
-  // Porcentaje de descuento a partir del precio anterior
+  function findProduct(id) { return PRODUCTS.find((p) => p.id === Number(id)); }
+  function stars(n) { return "★".repeat(n) + "☆".repeat(5 - n); }
   function discountPct(p) {
     if (!p.oldPrice || p.oldPrice <= p.price) return 0;
     return Math.round((1 - p.price / p.oldPrice) * 100);
   }
-
-  // Texto de cuotas estilo ML: "12x $83.332 sin interés"
   function installmentText(p) {
     if (!p.installments || p.installments <= 1) return "";
     const cuota = Math.round(p.price / p.installments);
     return `${p.installments}x ${money(cuota)} sin interés`;
   }
 
-  /* ---------- Estado del carrito ---------- */
+  /* ---------- Carrito ---------- */
   function getCart() {
-    try {
-      return JSON.parse(localStorage.getItem(CART_KEY)) || [];
-    } catch {
-      return [];
-    }
+    try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; }
+    catch { return []; }
   }
-
   function saveCart(cart) {
     localStorage.setItem(CART_KEY, JSON.stringify(cart));
     updateCartCount();
   }
-
   function addToCart(id, qty = 1) {
     id = Number(id);
     qty = Math.max(1, parseInt(qty, 10) || 1);
     const p = findProduct(id);
     if (!p) return;
     if (p.stock <= 0) { showToast("😕 Producto agotado"); return; }
-
     const cart = getCart();
     const item = cart.find((i) => i.id === id);
     const actual = item ? item.qty : 0;
     let nuevo = actual + qty;
-
     if (nuevo > p.stock) {
       nuevo = p.stock;
-      if (item) item.qty = nuevo;
-      else cart.push({ id, qty: nuevo });
+      if (item) item.qty = nuevo; else cart.push({ id, qty: nuevo });
       saveCart(cart);
       showToast(`Solo quedan ${p.stock} unidades disponibles`);
       return;
     }
-
-    if (item) item.qty = nuevo;
-    else cart.push({ id, qty: nuevo });
+    if (item) item.qty = nuevo; else cart.push({ id, qty: nuevo });
     saveCart(cart);
     showToast(`✓ ${p.name} agregado al carrito`);
   }
-
   function setQty(id, qty) {
     id = Number(id);
     const p = findProduct(id);
@@ -84,39 +89,26 @@
     const item = cart.find((i) => i.id === id);
     if (!item) return;
     let q = parseInt(qty, 10) || 0;
-    if (p && q > p.stock) {
-      q = p.stock;
-      showToast(`Stock máximo: ${p.stock} unidades`);
-    }
+    if (p && q > p.stock) { q = p.stock; showToast(`Stock máximo: ${p.stock} unidades`); }
     item.qty = q;
     if (item.qty <= 0) cart = cart.filter((i) => i.id !== id);
     saveCart(cart);
   }
-
   function changeQty(id, delta) {
     const item = getCart().find((i) => i.id === Number(id));
     setQty(id, (item ? item.qty : 0) + delta);
   }
-
-  function removeFromCart(id) {
-    saveCart(getCart().filter((i) => i.id !== Number(id)));
-  }
-
-  function clearCart() {
-    saveCart([]);
-  }
-
+  function removeFromCart(id) { saveCart(getCart().filter((i) => i.id !== Number(id))); }
+  function clearCart() { saveCart([]); }
   function cartTotals() {
     let count = 0, total = 0;
     getCart().forEach((i) => {
       const p = findProduct(i.id);
       if (!p) return;
-      count += i.qty;
-      total += p.price * i.qty;
+      count += i.qty; total += p.price * i.qty;
     });
     return { count, total };
   }
-
   function updateCartCount() {
     const { count } = cartTotals();
     document.querySelectorAll("[data-cart-count]").forEach((el) => {
@@ -124,6 +116,67 @@
       el.style.display = count > 0 ? "grid" : "none";
     });
   }
+  // Descontar stock al concretar una compra
+  function decrementStock(cart) {
+    cart.forEach((i) => {
+      const p = findProduct(i.id);
+      if (p) p.stock = Math.max(0, p.stock - i.qty);
+    });
+    saveProducts();
+  }
+
+  /* ---------- Autenticación de usuarios ---------- */
+  function getUsers() {
+    try { return JSON.parse(localStorage.getItem(USERS_KEY)) || []; }
+    catch { return []; }
+  }
+  function saveUsers(u) { localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
+  function ensureAdmin() {
+    const users = getUsers();
+    if (!users.some((u) => u.role === "admin")) {
+      users.push({ nombre: "Administrador", apellido: "", email: "admin@tecnoshop.cl", password: "admin123", role: "admin" });
+      saveUsers(users);
+    }
+  }
+  const Auth = {
+    register({ nombre, apellido, email, password }) {
+      email = email.trim().toLowerCase();
+      const users = getUsers();
+      if (users.some((u) => u.email === email)) {
+        return { ok: false, error: "Ya existe una cuenta con ese correo." };
+      }
+      users.push({ nombre, apellido, email, password, role: "cliente" });
+      saveUsers(users);
+      return { ok: true };
+    },
+    login(email, password) {
+      email = email.trim().toLowerCase();
+      const user = getUsers().find((u) => u.email === email && u.password === password);
+      if (!user) return { ok: false, error: "Correo o contraseña incorrectos." };
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ email: user.email, nombre: user.nombre, role: user.role }));
+      return { ok: true, user };
+    },
+    logout() { localStorage.removeItem(SESSION_KEY); },
+    current() {
+      try { return JSON.parse(localStorage.getItem(SESSION_KEY)); }
+      catch { return null; }
+    },
+    isAdmin() { const u = this.current(); return !!u && u.role === "admin"; }
+  };
+  ensureAdmin();
+
+  /* ---------- Pedidos ---------- */
+  const Orders = {
+    all() { try { return JSON.parse(localStorage.getItem(ORDERS_KEY)) || []; } catch { return []; } },
+    add(order) { const list = this.all(); list.unshift(order); localStorage.setItem(ORDERS_KEY, JSON.stringify(list)); },
+    forCurrent() {
+      const u = Auth.current();
+      const list = this.all();
+      if (!u) return [];
+      if (u.role === "admin") return list;
+      return list.filter((o) => o.email === u.email);
+    }
+  };
 
   /* ---------- Toast ---------- */
   let toastTimer;
@@ -131,8 +184,7 @@
     let el = document.getElementById("toast");
     if (!el) {
       el = document.createElement("div");
-      el.id = "toast";
-      el.className = "toast";
+      el.id = "toast"; el.className = "toast";
       document.body.appendChild(el);
     }
     el.textContent = msg;
@@ -141,54 +193,48 @@
     toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
   }
 
-  /* ---------- Buscador: redirige a productos.html?q= ---------- */
   function goSearch(q) {
     const term = (q || "").trim();
     window.location.href = "productos.html" + (term ? "?q=" + encodeURIComponent(term) : "");
   }
 
-  /* ---------- Header y footer estilo Mercado Libre ---------- */
+  /* ---------- Header y footer ---------- */
   function renderChrome() {
     const page = document.body.dataset.page || "";
-    const sesion = localStorage.getItem("tecnoshop_sesion");
+    const user = Auth.current();
 
     const catLinks = Object.entries(CATEGORIES)
-      .map(([key, c]) =>
-        `<a href="productos.html?cat=${key}">${c.label}</a>`)
+      .map(([key, c]) => `<a href="productos.html?cat=${key}">${c.label}</a>`)
       .join("");
+
+    const accountHtml = user
+      ? `<a href="pedidos.html">Hola, ${user.nombre}</a>
+         <a href="pedidos.html">Mis pedidos</a>
+         ${user.role === "admin" ? '<a href="admin.html">Admin</a>' : ""}
+         <a href="#" id="logoutLink">Salir</a>`
+      : `<a href="registro.html">Crear cuenta</a><a href="login.html">Ingresar</a>`;
 
     const header = document.querySelector("[data-include='header']");
     if (header) {
       header.outerHTML = `
         <header class="ml-header">
-          <!-- Fila superior: logo + buscador + cuenta + carrito -->
           <div class="ml-header__top">
             <div class="container ml-header__row">
               <a href="index.html" class="brand">
                 <span class="brand__icon">⬢</span>
                 <span class="brand__text">TECNO<span>SHOP</span></span>
               </a>
-
               <form class="ml-search" id="searchForm" role="search">
                 <input type="search" id="searchInput" class="ml-search__input"
                        placeholder="Buscar productos, marcas y más..." aria-label="Buscar" />
                 <button type="submit" class="ml-search__btn" aria-label="Buscar">🔍</button>
               </form>
-
               <div class="ml-header__actions">
                 <div class="ml-shipping">
                   <span class="ml-shipping__ico">📍</span>
-                  <div>
-                    <small>Enviar a</small>
-                    <strong>Santiago, Chile</strong>
-                  </div>
+                  <div><small>Enviar a</small><strong>Santiago, Chile</strong></div>
                 </div>
-                <nav class="ml-account">
-                  ${sesion
-                    ? `<a href="#" id="logoutLink">Hola, ${sesion.split("@")[0]}</a>`
-                    : `<a href="registro.html">Crear cuenta</a><a href="login.html">Ingresar</a>`}
-                  <a href="admin.html">Mi cuenta</a>
-                </nav>
+                <nav class="ml-account">${accountHtml}</nav>
                 <a href="carrito.html" class="ml-cart" aria-label="Carrito">
                   🛒 <span class="ml-cart__count" data-cart-count>0</span>
                 </a>
@@ -196,8 +242,6 @@
               </div>
             </div>
           </div>
-
-          <!-- Fila inferior: categorías -->
           <div class="ml-header__nav">
             <div class="container ml-catnav" id="catNav">
               <a href="productos.html" ${page === "productos" ? 'class="active"' : ""}>📂 Categorías</a>
@@ -210,24 +254,20 @@
           </div>
         </header>`;
 
-      // Eventos del header
       const form = document.getElementById("searchForm");
-      if (form) {
-        form.addEventListener("submit", (e) => {
-          e.preventDefault();
-          goSearch(document.getElementById("searchInput").value);
-        });
-      }
+      if (form) form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        goSearch(document.getElementById("searchInput").value);
+      });
       const toggle = document.getElementById("menuToggle");
       if (toggle) toggle.addEventListener("click", () =>
         document.getElementById("catNav").classList.toggle("open"));
-
       const logout = document.getElementById("logoutLink");
       if (logout) logout.addEventListener("click", (e) => {
         e.preventDefault();
-        localStorage.removeItem("tecnoshop_sesion");
+        Auth.logout();
         showToast("Sesión cerrada");
-        setTimeout(() => location.reload(), 800);
+        setTimeout(() => (window.location.href = "index.html"), 700);
       });
     }
 
@@ -242,26 +282,21 @@
               <a href="#">Quiénes somos</a>
               <a href="#">Trabaja con nosotros</a>
               <a href="#">Términos y condiciones</a>
-              <a href="#">Promociones</a>
+            </div>
+            <div>
+              <h5>Mi cuenta</h5>
+              <a href="login.html">Iniciar sesión</a>
+              <a href="registro.html">Crear cuenta</a>
+              <a href="pedidos.html">Mis pedidos</a>
             </div>
             <div>
               <h5>Otros sitios</h5>
-              <a href="admin.html">Vender</a>
+              <a href="admin.html">Administración</a>
               <a href="integraciones.html">Integraciones / APIs</a>
-              <a href="#">Tendencias</a>
-            </div>
-            <div>
-              <h5>Ayuda</h5>
-              <a href="#">Comprar</a>
-              <a href="#">Medios de pago</a>
-              <a href="#">Cómo cuidamos tu privacidad</a>
             </div>
             <div>
               <h5>Redes sociales</h5>
-              <a href="#">Twitch</a>
-              <a href="#">YouTube</a>
-              <a href="#">Instagram</a>
-              <a href="#">X / Twitter</a>
+              <a href="#">Twitch</a><a href="#">YouTube</a><a href="#">Instagram</a>
             </div>
             <div>
               <h5>Medios de pago</h5>
@@ -280,7 +315,9 @@
   window.Store = {
     money, stars, findProduct, discountPct, installmentText,
     getCart, addToCart, setQty, changeQty, removeFromCart, clearCart,
-    cartTotals, updateCartCount, showToast
+    cartTotals, updateCartCount, showToast,
+    saveProducts, resetProducts, decrementStock,
+    Auth, Orders
   };
 
   /* ---------- Init ---------- */

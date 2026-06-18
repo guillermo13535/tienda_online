@@ -79,7 +79,12 @@
       if (v("password") !== v("password2")) { setErr("errPass2", "Las contraseñas no coinciden."); ok = false; }
 
       if (ok) {
-        window.Store.showToast("✓ ¡Registro exitoso! Bienvenido a TecnoShop");
+        const res = window.Store.Auth.register({
+          nombre: v("nombre"), apellido: v("apellido"),
+          email: v("email"), password: v("password")
+        });
+        if (!res.ok) { setErr("errEmail", res.error); return; }
+        window.Store.showToast("✓ ¡Registro exitoso! Ya puedes iniciar sesión");
         setTimeout(() => (window.location.href = "login.html"), 1400);
       }
     });

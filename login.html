@@ -33,6 +33,7 @@
 
         <button type="submit" class="btn btn--primary btn--block">Entrar</button>
         <p class="auth-foot">¿No tienes cuenta? <a href="registro.html">Regístrate aquí</a></p>
+        <p class="auth-foot" style="font-size:.8rem">Demo admin: <strong>admin@tecnoshop.cl</strong> / <strong>admin123</strong></p>
       </form>
     </div>
   </main>
@@ -62,9 +63,11 @@
       } else { errPass.textContent = ""; }
 
       if (ok) {
-        localStorage.setItem("tecnoshop_sesion", email.value.trim());
+        const res = window.Store.Auth.login(email.value, pass.value);
+        if (!res.ok) { errPass.textContent = res.error; return; }
         window.Store.showToast("✓ Sesión iniciada correctamente");
-        setTimeout(() => (window.location.href = "index.html"), 1200);
+        const dest = res.user.role === "admin" ? "admin.html" : "index.html";
+        setTimeout(() => (window.location.href = dest), 1100);
       }
     });
   </script>
