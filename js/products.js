@@ -11,7 +11,7 @@ const PRODUCTS = [
     price: 999990, oldPrice: 1199990, installments: 12, freeShipping: true, full: true,
     condition: "Nuevo", sold: 250, stock: 15, rating: 5,
     image: "https://commons.wikimedia.org/wiki/Special:FilePath/IPhone_15_pro_max.png?width=600",
-    gallery: ["https://commons.wikimedia.org/wiki/Special:FilePath/IPhone_15_pro_max.png?width=600"],
+    gallery: ["https://commons.wikimedia.org/wiki/Special:FilePath/IPhone_15_pro_max.png?width=600", "https://commons.wikimedia.org/wiki/Special:FilePath/IPhone_15_Pro.jpg?width=600", "https://commons.wikimedia.org/wiki/Special:FilePath/Front_of_iPhone_15_Pro_Max.jpg?width=600"],
     description: "El iPhone 15 Pro Max combina el chip A17 Pro, pantalla OLED de 6.7\" y diseño en titanio. Resistencia IP68 y cámara profesional.",
     specs: { "Marca": "Apple", "Sistema operativo": "iOS 17", "Pantalla": "OLED 6.7\"", "Procesador": "A17 Pro", "Almacenamiento": "256 GB", "Garantía": "1 año" }
   },
@@ -20,7 +20,7 @@ const PRODUCTS = [
     price: 999990, oldPrice: 1099990, installments: 12, freeShipping: true, full: true,
     condition: "Nuevo", sold: 180, stock: 10, rating: 5,
     image: "https://commons.wikimedia.org/wiki/Special:FilePath/SAMSUNG_Galaxy_S24_Ultra_(2).jpg?width=600",
-    gallery: ["https://commons.wikimedia.org/wiki/Special:FilePath/SAMSUNG_Galaxy_S24_Ultra_(2).jpg?width=600"],
+    gallery: ["https://commons.wikimedia.org/wiki/Special:FilePath/SAMSUNG_Galaxy_S24_Ultra_(2).jpg?width=600", "https://commons.wikimedia.org/wiki/Special:FilePath/Samsung_Galaxy_S24_(webtekno)_008.png?width=600"],
     description: "Galaxy S24 Ultra con S Pen integrado, pantalla Dynamic AMOLED 2X de 6.8\" y cámara de 200 MP potenciada con IA.",
     specs: { "Marca": "Samsung", "Sistema operativo": "Android 14", "Pantalla": "AMOLED 6.8\"", "Procesador": "Snapdragon 8 Gen 3", "Almacenamiento": "256 GB", "Garantía": "1 año" }
   },
@@ -187,7 +187,7 @@ const PRODUCTS = [
     price: 549990, oldPrice: 649990, installments: 12, freeShipping: true, full: true,
     condition: "Nuevo", sold: 980, stock: 5, rating: 5,
     image: "https://commons.wikimedia.org/wiki/Special:FilePath/PlayStation_5_and_DualSense_with_transparent_background.png?width=600",
-    gallery: ["https://commons.wikimedia.org/wiki/Special:FilePath/PlayStation_5_and_DualSense_with_transparent_background.png?width=600"],
+    gallery: ["https://commons.wikimedia.org/wiki/Special:FilePath/PlayStation_5_and_DualSense_with_transparent_background.png?width=600", "https://commons.wikimedia.org/wiki/Special:FilePath/PlayStation_5_and_DualSense_(2).jpg?width=600", "https://commons.wikimedia.org/wiki/Special:FilePath/Black_and_white_Playstation_5_base_edition_with_controller.png?width=600"],
     description: "PlayStation 5 Slim con 1TB de almacenamiento, lector de discos y mando DualSense con respuesta háptica.",
     specs: { "Marca": "Sony", "Almacenamiento": "1 TB SSD", "Resolución": "Hasta 4K", "Incluye": "Mando DualSense", "Garantía": "1 año" }
   },
@@ -205,7 +205,7 @@ const PRODUCTS = [
     price: 379990, oldPrice: 429990, installments: 12, freeShipping: true, full: true,
     condition: "Nuevo", sold: 1120, stock: 14, rating: 5,
     image: "https://commons.wikimedia.org/wiki/Special:FilePath/Nintendo_Switch_-_OLED.jpg?width=600",
-    gallery: ["https://commons.wikimedia.org/wiki/Special:FilePath/Nintendo_Switch_-_OLED.jpg?width=600"],
+    gallery: ["https://commons.wikimedia.org/wiki/Special:FilePath/Nintendo_Switch_-_OLED.jpg?width=600", "https://commons.wikimedia.org/wiki/Special:FilePath/Nintendo_Switch_OLED.png?width=600"],
     description: "Nintendo Switch modelo OLED con pantalla de 7\", colores vibrantes, base con puerto LAN y 64 GB de almacenamiento.",
     specs: { "Marca": "Nintendo", "Pantalla": "OLED 7\"", "Almacenamiento": "64 GB", "Modos": "TV / Sobremesa / Portátil", "Garantía": "1 año" }
   },

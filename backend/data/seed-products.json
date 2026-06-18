@@ -14,7 +14,9 @@
     "rating": 5,
     "image": "https://commons.wikimedia.org/wiki/Special:FilePath/IPhone_15_pro_max.png?width=600",
     "gallery": [
-      "https://commons.wikimedia.org/wiki/Special:FilePath/IPhone_15_pro_max.png?width=600"
+      "https://commons.wikimedia.org/wiki/Special:FilePath/IPhone_15_pro_max.png?width=600",
+      "https://commons.wikimedia.org/wiki/Special:FilePath/IPhone_15_Pro.jpg?width=600",
+      "https://commons.wikimedia.org/wiki/Special:FilePath/Front_of_iPhone_15_Pro_Max.jpg?width=600"
     ],
     "description": "El iPhone 15 Pro Max combina el chip A17 Pro, pantalla OLED de 6.7\" y diseño en titanio. Resistencia IP68 y cámara profesional.",
     "specs": {
@@ -41,7 +43,8 @@
     "rating": 5,
     "image": "https://commons.wikimedia.org/wiki/Special:FilePath/SAMSUNG_Galaxy_S24_Ultra_(2).jpg?width=600",
     "gallery": [
-      "https://commons.wikimedia.org/wiki/Special:FilePath/SAMSUNG_Galaxy_S24_Ultra_(2).jpg?width=600"
+      "https://commons.wikimedia.org/wiki/Special:FilePath/SAMSUNG_Galaxy_S24_Ultra_(2).jpg?width=600",
+      "https://commons.wikimedia.org/wiki/Special:FilePath/Samsung_Galaxy_S24_(webtekno)_008.png?width=600"
     ],
     "description": "Galaxy S24 Ultra con S Pen integrado, pantalla Dynamic AMOLED 2X de 6.8\" y cámara de 200 MP potenciada con IA.",
     "specs": {
@@ -518,7 +521,9 @@
     "rating": 5,
     "image": "https://commons.wikimedia.org/wiki/Special:FilePath/PlayStation_5_and_DualSense_with_transparent_background.png?width=600",
     "gallery": [
-      "https://commons.wikimedia.org/wiki/Special:FilePath/PlayStation_5_and_DualSense_with_transparent_background.png?width=600"
+      "https://commons.wikimedia.org/wiki/Special:FilePath/PlayStation_5_and_DualSense_with_transparent_background.png?width=600",
+      "https://commons.wikimedia.org/wiki/Special:FilePath/PlayStation_5_and_DualSense_(2).jpg?width=600",
+      "https://commons.wikimedia.org/wiki/Special:FilePath/Black_and_white_Playstation_5_base_edition_with_controller.png?width=600"
     ],
     "description": "PlayStation 5 Slim con 1TB de almacenamiento, lector de discos y mando DualSense con respuesta háptica.",
     "specs": {
@@ -570,7 +575,8 @@
     "rating": 5,
     "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Nintendo_Switch_-_OLED.jpg?width=600",
     "gallery": [
-      "https://commons.wikimedia.org/wiki/Special:FilePath/Nintendo_Switch_-_OLED.jpg?width=600"
+      "https://commons.wikimedia.org/wiki/Special:FilePath/Nintendo_Switch_-_OLED.jpg?width=600",
+      "https://commons.wikimedia.org/wiki/Special:FilePath/Nintendo_Switch_OLED.png?width=600"
     ],
     "description": "Nintendo Switch modelo OLED con pantalla de 7\", colores vibrantes, base con puerto LAN y 64 GB de almacenamiento.",
     "specs": {

@@ -246,7 +246,7 @@
           <span class="brand__icon">⬢</span>
           <span class="brand__text">TECNO<span>SHOP</span></span>
         </div>
-        <h2>¡Bienvenido(a), ${name}! 🎉</h2>
+        <h2>¡Bienvenido(a), ${name}!</h2>
         <p>Nos alegra tenerte aquí. Disfruta la mejor tecnología y gaming al mejor precio.</p>
         <button class="btn btn--primary" id="welcomeClose">Comenzar a comprar</button>
       </div>`;
@@ -256,6 +256,49 @@
     ov.querySelector("#welcomeClose").addEventListener("click", close);
     ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     setTimeout(close, 6000);
+  }
+
+  /* ---------- Cierre de sesión por inactividad (el carrito se conserva) ---------- */
+  const INACTIVITY_MS = 120000; // 2 minutos sin actividad
+  let inactivityTimer, countdownInterval, countdownActive = false;
+
+  function resetInactivity() {
+    if (countdownActive || !Auth.current()) return;
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(showInactivityCountdown, INACTIVITY_MS);
+  }
+
+  function showInactivityCountdown() {
+    if (!Auth.current() || document.getElementById("inactivityOverlay")) return;
+    countdownActive = true;
+    let s = 15;
+    const ov = document.createElement("div");
+    ov.id = "inactivityOverlay";
+    ov.className = "welcome-overlay show";
+    ov.innerHTML = `
+      <div class="welcome-box">
+        <div class="welcome-logo"><span class="brand__icon" style="font-size:3.5rem">⏳</span></div>
+        <h2>¿Sigues ahí?</h2>
+        <p>Tu sesión se cerrará por inactividad en <strong id="invCount">${s}</strong> segundos.<br>Tu carrito quedará guardado.</p>
+        <button class="btn btn--primary" id="stayBtn">Seguir conectado</button>
+      </div>`;
+    document.body.appendChild(ov);
+    document.getElementById("stayBtn").addEventListener("click", () => {
+      clearInterval(countdownInterval);
+      ov.remove();
+      countdownActive = false;
+      resetInactivity();
+    });
+    countdownInterval = setInterval(() => {
+      s--;
+      const el = document.getElementById("invCount");
+      if (el) el.textContent = s;
+      if (s <= 0) {
+        clearInterval(countdownInterval);
+        Auth.logout(); // solo borra la sesión; el carrito (otra clave) se mantiene
+        window.location.replace("login.html");
+      }
+    }, 1000);
   }
 
   /* ---------- Header y footer ---------- */
@@ -381,14 +424,32 @@
   };
 
   /* ---------- Init ---------- */
+  const PUBLIC_PAGES = ["login", "registro"];
+
   document.addEventListener("DOMContentLoaded", function () {
+    const page = document.body.dataset.page || "";
+
+    // Portón de autenticación: hay que iniciar sesión o registrarse primero
+    if (!Auth.current() && !PUBLIC_PAGES.includes(page)) {
+      window.location.replace("login.html");
+      return;
+    }
+
     renderChrome();
     updateCartCount();
-    // Mostrar bienvenida si se acaba de iniciar sesión
+
+    // Mostrar bienvenida con el logo si se acaba de iniciar sesión
     const welcome = localStorage.getItem("tecnoshop_welcome");
     if (welcome) {
       localStorage.removeItem("tecnoshop_welcome");
       showWelcome(welcome);
+    }
+
+    // Activar control de inactividad cuando hay sesión
+    if (Auth.current()) {
+      ["mousemove", "keydown", "click", "scroll", "touchstart"].forEach((ev) =>
+        document.addEventListener(ev, resetInactivity, { passive: true }));
+      resetInactivity();
     }
   });
 })();

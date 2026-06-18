@@ -509,11 +509,28 @@ section.block { padding: 40px 0; }
 .badge-ok { color: var(--green); font-weight: 700; }
 .email-status { margin-top: 14px; font-size: .95rem; }
 
+/* ===== Medios de pago realistas + tarjeta ===== */
+.pay-method { justify-content: space-between; }
+.pm-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.pm-info strong { font-weight: 700; }
+.pm-info small { color: var(--muted); font-size: .8rem; }
+.pm-brands { display: flex; gap: 6px; align-items: center; }
+.pm-brand { font-family: Arial, sans-serif; font-weight: 800; font-size: .68rem; padding: 3px 6px; border-radius: 4px; color: #fff; letter-spacing: .5px; }
+.pm-brand.visa { background: #1a1f71; }
+.pm-brand.mc { background: #eb001b; }
+.pm-brand.amex { background: #2e77bc; }
+.card-brand { color: var(--primary); font-weight: 700; font-size: .85rem; margin-left: 6px; }
+.cooldown-info { color: var(--warning); font-weight: 700; text-align: center; margin-top: 12px; }
+.btn.is-disabled { opacity: .55; cursor: not-allowed; }
+.pdp-pay p { color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pdp-pay strong { color: var(--green); }
+.pdp-info { list-style: none; display: grid; gap: 8px; }
+.pdp-info li { color: var(--muted); }
+
 /* ===== Pantalla de bienvenida ===== */
 .welcome-overlay {
   position: fixed; inset: 0;
-  background: rgba(7, 7, 15, 0.85);
-  backdrop-filter: blur(6px);
+  background: var(--bg);
   display: grid; place-items: center;
   z-index: 300;
   opacity: 0; visibility: hidden;
@@ -524,28 +541,37 @@ section.block { padding: 40px 0; }
 .welcome-box {
   background: var(--bg-soft);
   border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 40px 34px;
-  max-width: 440px;
+  border-radius: 24px;
+  padding: 64px 48px;
+  max-width: 600px;
+  width: 100%;
   text-align: center;
-  box-shadow: 0 0 60px rgba(0, 224, 184, .25);
+  box-shadow: 0 0 80px rgba(0, 224, 184, .3);
   transform: scale(.85) translateY(20px);
   transition: transform .4s cubic-bezier(.2, .8, .2, 1.2);
 }
 .welcome-overlay.show .welcome-box { transform: scale(1) translateY(0); }
 .welcome-logo {
-  display: inline-flex; align-items: center; gap: 10px;
-  font-size: 1.6rem; margin-bottom: 18px;
+  display: inline-flex; align-items: center; gap: 14px;
+  font-size: 3rem; margin-bottom: 24px;
   animation: welcomePulse 1.8s ease-in-out infinite;
 }
-.welcome-logo .brand__icon { color: var(--primary); font-size: 2.2rem; }
-.welcome-logo .brand__text { font-family: "Orbitron", sans-serif; font-weight: 900; letter-spacing: 1px; }
+.welcome-logo .brand__icon { color: var(--primary); font-size: 4.5rem; }
+.welcome-logo .brand__text { font-family: "Orbitron", sans-serif; font-weight: 900; letter-spacing: 2px; font-size: 2.4rem; }
 .welcome-logo .brand__text span { color: var(--primary); }
-.welcome-box h2 { font-family: "Orbitron", sans-serif; font-size: 1.4rem; margin-bottom: 10px; }
-.welcome-box p { color: var(--muted); margin-bottom: 22px; }
+.welcome-box h2 { font-family: "Orbitron", sans-serif; font-size: 2rem; margin-bottom: 14px; }
+.welcome-box p { color: var(--muted); margin-bottom: 28px; font-size: 1.1rem; }
+.welcome-box .btn { font-size: 1.1rem; padding: 14px 32px; }
 @keyframes welcomePulse {
   0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(0,224,184,0)); }
-  50% { transform: scale(1.06); filter: drop-shadow(0 0 12px rgba(0,224,184,.6)); }
+  50% { transform: scale(1.06); filter: drop-shadow(0 0 18px rgba(0,224,184,.7)); }
+}
+@media (max-width: 560px) {
+  .welcome-box { padding: 44px 24px; }
+  .welcome-logo { font-size: 2rem; }
+  .welcome-logo .brand__icon { font-size: 3.2rem; }
+  .welcome-logo .brand__text { font-size: 1.7rem; }
+  .welcome-box h2 { font-size: 1.5rem; }
 }
 
 /* ===== Toast ===== */

@@ -326,7 +326,7 @@
 
         <!-- Info central -->
         <div class="pdp__center">
-          <p class="pdp__cond">${p.condition} | ${p.sold} vendidos</p>
+          <p class="pdp__cond">${p.condition} | ${p.sold} vendidos | Marca: <strong>${S.brandOf(p)}</strong></p>
           <h1 class="pdp__title">${p.name}</h1>
           <div class="pdp__rating">${stars(p.rating)} <span>(${p.rating}.0)</span></div>
           ${p.oldPrice && off > 0 ? `<p class="pdp__old">${money(p.oldPrice)}</p>` : ""}
@@ -335,7 +335,7 @@
             ${off > 0 ? `<span class="pdp__off">${off}% OFF</span>` : ""}
           </div>
           ${inst ? `<p class="pdp__inst">en ${inst}</p>` : ""}
-          <a href="#" class="pdp__paylink">Ver los medios de pago</a>
+          <a href="#mediosPago" class="pdp__paylink">Ver los medios de pago</a>
 
           <div class="pdp__desc">
             <h3>Descripción</h3>
@@ -345,6 +345,25 @@
           <div class="pdp__specs">
             <h3>Características principales</h3>
             <table class="spec-table"><tbody>${specsHtml}</tbody></table>
+          </div>
+
+          <div class="pdp__specs" id="mediosPago">
+            <h3>Medios de pago</h3>
+            <div class="pdp-pay">
+              <p><span class="pm-brand visa">VISA</span><span class="pm-brand mc">MC</span><span class="pm-brand amex">AMEX</span> Tarjetas de crédito${p.installments > 1 ? ` · hasta <strong>${p.installments} cuotas sin interés</strong>` : ""}</p>
+              <p>💙 Mercado Pago &nbsp;·&nbsp; 🏦 Transferencia bancaria &nbsp;·&nbsp; 💳 Tarjetas de débito</p>
+            </div>
+          </div>
+
+          <div class="pdp__specs">
+            <h3>Envío y devoluciones</h3>
+            <ul class="pdp-info">
+              <li>🚚 ${p.freeShipping ? "Envío gratis a todo Chile" : "Envío con costo a calcular según tu ubicación"}.</li>
+              <li>📦 Despacho en 24 h · entrega estimada de 2 a 4 días hábiles.</li>
+              <li>↩️ Devolución gratis dentro de los primeros 30 días.</li>
+              <li>🛡️ Compra Protegida: recibe el producto que esperabas o te devolvemos tu dinero.</li>
+              <li>🏅 Garantía: ${p.specs["Garantía"] || "6 meses"}.</li>
+            </ul>
           </div>
         </div>
 
@@ -520,15 +539,25 @@
         <section class="panel">
           <h3>Medio de pago</h3>
           <div class="pay-methods" id="payMethods">
-            <label class="pay-method active"><input type="radio" name="pm" value="tarjeta" checked> 💳 Tarjeta de crédito / débito</label>
-            <label class="pay-method"><input type="radio" name="pm" value="mercadopago"> 💙 Mercado Pago</label>
-            <label class="pay-method"><input type="radio" name="pm" value="transferencia"> 🏦 Transferencia bancaria</label>
+            <label class="pay-method active">
+              <input type="radio" name="pm" value="tarjeta" checked>
+              <span class="pm-info"><strong>💳 Tarjeta de crédito / débito</strong><small>Visa, Mastercard, American Express</small></span>
+              <span class="pm-brands"><span class="pm-brand visa">VISA</span><span class="pm-brand mc">MC</span><span class="pm-brand amex">AMEX</span></span>
+            </label>
+            <label class="pay-method">
+              <input type="radio" name="pm" value="mercadopago">
+              <span class="pm-info"><strong>💙 Mercado Pago</strong><small>Paga con saldo, tarjeta o en cuotas</small></span>
+            </label>
+            <label class="pay-method">
+              <input type="radio" name="pm" value="transferencia">
+              <span class="pm-info"><strong>🏦 Transferencia bancaria</strong><small>Acreditación inmediata</small></span>
+            </label>
           </div>
 
           <!-- Formulario tarjeta -->
           <form id="cardForm" class="pay-panel" novalidate>
             <div class="field">
-              <label for="cardNum">Número de tarjeta</label>
+              <label for="cardNum">Número de tarjeta <span id="cardBrand" class="card-brand"></span></label>
               <input type="text" id="cardNum" inputmode="numeric" maxlength="19" placeholder="1234 5678 9012 3456" autocomplete="cc-number">
               <span class="error" id="errCardNum"></span>
             </div>
@@ -590,6 +619,7 @@
     // Cambiar panel según método
     const panels = { tarjeta: "cardForm", mercadopago: "mpPanel", transferencia: "transferPanel" };
     let mpRendered = false;
+    let finalizando = false; // protección contra doble pago
 
     async function renderMP() {
       const box = document.getElementById("mpBtns");
@@ -632,11 +662,20 @@
     wrap.querySelectorAll('input[name="pm"]').forEach((r) =>
       r.addEventListener("change", (e) => showPanel(e.target.value)));
 
-    // Formateo automático del número de tarjeta
+    // Formateo automático del número de tarjeta + detección de marca
     const cardNum = document.getElementById("cardNum");
+    function detectBrand(num) {
+      const n = num.replace(/\D/g, "");
+      if (/^4/.test(n)) return "VISA";
+      if (/^(5[1-5]|2[2-7])/.test(n)) return "Mastercard";
+      if (/^3[47]/.test(n)) return "Amex";
+      return "";
+    }
     cardNum.addEventListener("input", () => {
       let v = cardNum.value.replace(/\D/g, "").slice(0, 16);
       cardNum.value = v.replace(/(.{4})/g, "$1 ").trim();
+      const brand = detectBrand(v);
+      document.getElementById("cardBrand").textContent = brand ? "• " + brand : "";
     });
     const cardExp = document.getElementById("cardExp");
     cardExp.addEventListener("input", () => {
@@ -654,7 +693,10 @@
       set("errCardNum", ""); set("errCardName", ""); set("errCardExp", ""); set("errCardCvv", "");
 
       if (!luhnValid(cardNum.value)) { set("errCardNum", "Número de tarjeta no válido."); ok = false; }
-      if (document.getElementById("cardName").value.trim().length < 3) { set("errCardName", "Ingresa el nombre del titular."); ok = false; }
+      const nombreTit = document.getElementById("cardName").value.trim();
+      if (nombreTit.length < 3 || !/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ'\s.]+$/.test(nombreTit)) {
+        set("errCardName", "Dato inválido: el nombre solo puede contener letras."); ok = false;
+      }
 
       const exp = cardExp.value;
       const m = exp.match(/^(\d{2})\/(\d{2})$/);
@@ -670,6 +712,9 @@
     }
 
     function finalizar(metodoLabel) {
+      if (finalizando) return;       // evita pago doble
+      finalizando = true;
+      localStorage.setItem("tecnoshop_lastpurchase", Date.now()); // inicia la espera de 10s
       const orden = "TS-" + Date.now().toString().slice(-8);
       const user = S.Auth.current();
       const emailField = document.getElementById("buyerEmail");
@@ -784,6 +829,32 @@
         }
       });
     }
+
+    // Espera mínima de 10 s entre compras (cuenta regresiva)
+    function applyCooldown() {
+      const last = +localStorage.getItem("tecnoshop_lastpurchase") || 0;
+      let rem = Math.ceil((10000 - (Date.now() - last)) / 1000);
+      if (rem <= 0) return;
+      const payBtn = document.getElementById("payBtn");
+      if (!payBtn) return;
+      payBtn.disabled = true;
+      payBtn.classList.add("is-disabled");
+      const info = document.createElement("p");
+      info.className = "cooldown-info";
+      payBtn.insertAdjacentElement("beforebegin", info);
+      (function tick() {
+        if (rem <= 0) {
+          payBtn.disabled = false;
+          payBtn.classList.remove("is-disabled");
+          info.remove();
+          return;
+        }
+        info.textContent = `⏳ Espera ${rem} s para realizar otra compra...`;
+        rem--;
+        setTimeout(tick, 1000);
+      })();
+    }
+    applyCooldown();
   }
 
   /* ---------- Página: Mis pedidos ---------- */
