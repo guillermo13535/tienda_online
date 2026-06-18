@@ -100,12 +100,29 @@ window.Integrations = (function () {
   }
 
   /* ---------- 6. ENVÍO DE CORREO (EmailJS, sin backend) ---------- */
-  // Para activar el envío real: crea una cuenta gratis en https://www.emailjs.com,
-  // crea un "Email Service" y un "Email Template", y pega aquí tus claves.
+  // ===========================================================
+  // CÓMO ACTIVAR EL ENVÍO DE LA BOLETA POR CORREO (gratis, 5 min):
+  // 1. Crea una cuenta en https://www.emailjs.com (Sign Up).
+  // 2. Email Services -> Add New Service -> conecta tu Gmail -> copia el SERVICE ID.
+  // 3. Email Templates -> Create New Template. En el cuerpo usa estas variables:
+  //      Para: {{to_email}}
+  //      Asunto: Boleta de tu compra {{orden}} - TecnoShop
+  //      Cuerpo:
+  //        Hola {{cliente}}, gracias por tu compra en TecnoShop.
+  //        N° de boleta: {{orden}}
+  //        Fecha: {{fecha}}
+  //        Medio de pago: {{metodo}}
+  //        Detalle:
+  //        {{detalle}}
+  //        TOTAL: {{total}}
+  //    Guarda y copia el TEMPLATE ID.
+  // 4. Account -> General -> copia tu PUBLIC KEY.
+  // 5. Pega los 3 valores abajo y listo: la boleta llegará al correo del cliente.
+  // ===========================================================
   const EMAILJS_CONFIG = {
-    publicKey: "TU_PUBLIC_KEY",   // <-- reemplazar
-    serviceId: "TU_SERVICE_ID",   // <-- reemplazar
-    templateId: "TU_TEMPLATE_ID"  // <-- reemplazar
+    publicKey: "TU_PUBLIC_KEY",   // <-- reemplazar (Account > General > Public Key)
+    serviceId: "TU_SERVICE_ID",   // <-- reemplazar (Email Services)
+    templateId: "TU_TEMPLATE_ID"  // <-- reemplazar (Email Templates)
   };
   function emailConfigured() {
     return EMAILJS_CONFIG.publicKey && !EMAILJS_CONFIG.publicKey.startsWith("TU_");
