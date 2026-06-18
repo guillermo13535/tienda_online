@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Google Identity Services (registrarse con Google) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body data-page="registro">
   <div data-include="header"></div>
@@ -50,6 +52,10 @@
         </div>
 
         <button type="submit" class="btn btn--primary btn--block">Registrarse</button>
+
+        <div class="auth-divider"><span>o</span></div>
+        <div id="googleBtn" class="google-btn"></div>
+
         <p class="auth-foot">¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></p>
       </form>
     </div>
@@ -59,6 +65,7 @@
 
   <script src="js/products.js"></script>
   <script src="js/store.js"></script>
+  <script src="js/google-auth.js"></script>
   <script>
     document.getElementById("registroForm").addEventListener("submit", function (e) {
       e.preventDefault();

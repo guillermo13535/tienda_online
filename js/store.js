@@ -156,6 +156,19 @@
       localStorage.setItem(SESSION_KEY, JSON.stringify({ email: user.email, nombre: user.nombre, role: user.role }));
       return { ok: true, user };
     },
+    // Inicio de sesión con un perfil externo (Google)
+    loginWithProfile({ nombre, apellido, email }) {
+      email = (email || "").trim().toLowerCase();
+      const users = getUsers();
+      let user = users.find((u) => u.email === email);
+      if (!user) {
+        user = { nombre: nombre || "Usuario", apellido: apellido || "", email, password: "", role: "cliente", provider: "google" };
+        users.push(user);
+        saveUsers(users);
+      }
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ email: user.email, nombre: user.nombre, role: user.role }));
+      return user;
+    },
     logout() { localStorage.removeItem(SESSION_KEY); },
     current() {
       try { return JSON.parse(localStorage.getItem(SESSION_KEY)); }

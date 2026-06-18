@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Google Identity Services (iniciar sesión con Google) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body data-page="login">
   <div data-include="header"></div>
@@ -32,6 +34,10 @@
         </div>
 
         <button type="submit" class="btn btn--primary btn--block">Entrar</button>
+
+        <div class="auth-divider"><span>o</span></div>
+        <div id="googleBtn" class="google-btn"></div>
+
         <p class="auth-foot">¿No tienes cuenta? <a href="registro.html">Regístrate aquí</a></p>
         <p class="auth-foot" style="font-size:.8rem">Demo admin: <strong>admin@tecnoshop.cl</strong> / <strong>admin123</strong></p>
       </form>
@@ -42,6 +48,7 @@
 
   <script src="js/products.js"></script>
   <script src="js/store.js"></script>
+  <script src="js/google-auth.js"></script>
   <script>
     document.getElementById("loginForm").addEventListener("submit", function (e) {
       e.preventDefault();

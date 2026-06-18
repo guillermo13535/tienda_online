@@ -395,6 +395,9 @@ section.block { padding: 40px 0; }
 .field .error { color: var(--accent); font-size: .82rem; margin-top: 4px; min-height: 1em; display: block; }
 .auth-foot { text-align: center; color: var(--muted); margin-top: 18px; font-size: .92rem; }
 .auth-foot a { color: var(--primary); font-weight: 700; }
+.auth-divider { display: flex; align-items: center; gap: 12px; color: var(--muted); margin: 18px 0; font-size: .85rem; }
+.auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.google-btn { display: flex; justify-content: center; min-height: 44px; }
 
 /* =========================================================
    ADMIN
