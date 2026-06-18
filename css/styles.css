@@ -485,6 +485,45 @@ section.block { padding: 40px 0; }
 .order-card__foot { font-size: .9rem; color: var(--muted); }
 .badge-ok { color: var(--green); font-weight: 700; }
 
+/* ===== Pantalla de bienvenida ===== */
+.welcome-overlay {
+  position: fixed; inset: 0;
+  background: rgba(7, 7, 15, 0.85);
+  backdrop-filter: blur(6px);
+  display: grid; place-items: center;
+  z-index: 300;
+  opacity: 0; visibility: hidden;
+  transition: opacity .35s ease;
+  padding: 20px;
+}
+.welcome-overlay.show { opacity: 1; visibility: visible; }
+.welcome-box {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 40px 34px;
+  max-width: 440px;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(0, 224, 184, .25);
+  transform: scale(.85) translateY(20px);
+  transition: transform .4s cubic-bezier(.2, .8, .2, 1.2);
+}
+.welcome-overlay.show .welcome-box { transform: scale(1) translateY(0); }
+.welcome-logo {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 1.6rem; margin-bottom: 18px;
+  animation: welcomePulse 1.8s ease-in-out infinite;
+}
+.welcome-logo .brand__icon { color: var(--primary); font-size: 2.2rem; }
+.welcome-logo .brand__text { font-family: "Orbitron", sans-serif; font-weight: 900; letter-spacing: 1px; }
+.welcome-logo .brand__text span { color: var(--primary); }
+.welcome-box h2 { font-family: "Orbitron", sans-serif; font-size: 1.4rem; margin-bottom: 10px; }
+.welcome-box p { color: var(--muted); margin-bottom: 22px; }
+@keyframes welcomePulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(0,224,184,0)); }
+  50% { transform: scale(1.06); filter: drop-shadow(0 0 12px rgba(0,224,184,.6)); }
+}
+
 /* ===== Toast ===== */
 .toast {
   position: fixed; bottom: 24px; left: 50%;

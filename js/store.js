@@ -198,6 +198,28 @@
     window.location.href = "productos.html" + (term ? "?q=" + encodeURIComponent(term) : "");
   }
 
+  /* ---------- Pantalla de bienvenida (tras iniciar sesión) ---------- */
+  function showWelcome(name) {
+    const ov = document.createElement("div");
+    ov.className = "welcome-overlay";
+    ov.innerHTML = `
+      <div class="welcome-box">
+        <div class="welcome-logo">
+          <span class="brand__icon">⬢</span>
+          <span class="brand__text">TECNO<span>SHOP</span></span>
+        </div>
+        <h2>¡Bienvenido(a), ${name}! 🎉</h2>
+        <p>Nos alegra tenerte aquí. Disfruta la mejor tecnología y gaming al mejor precio.</p>
+        <button class="btn btn--primary" id="welcomeClose">Comenzar a comprar</button>
+      </div>`;
+    document.body.appendChild(ov);
+    requestAnimationFrame(() => ov.classList.add("show"));
+    const close = () => { ov.classList.remove("show"); setTimeout(() => ov.remove(), 350); };
+    ov.querySelector("#welcomeClose").addEventListener("click", close);
+    ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
+    setTimeout(close, 6000);
+  }
+
   /* ---------- Header y footer ---------- */
   function renderChrome() {
     const page = document.body.dataset.page || "";
@@ -324,5 +346,11 @@
   document.addEventListener("DOMContentLoaded", function () {
     renderChrome();
     updateCartCount();
+    // Mostrar bienvenida si se acaba de iniciar sesión
+    const welcome = localStorage.getItem("tecnoshop_welcome");
+    if (welcome) {
+      localStorage.removeItem("tecnoshop_welcome");
+      showWelcome(welcome);
+    }
   });
 })();

@@ -65,9 +65,9 @@
       if (ok) {
         const res = window.Store.Auth.login(email.value, pass.value);
         if (!res.ok) { errPass.textContent = res.error; return; }
-        window.Store.showToast("✓ Sesión iniciada correctamente");
+        localStorage.setItem("tecnoshop_welcome", res.user.nombre);
         const dest = res.user.role === "admin" ? "admin.html" : "index.html";
-        setTimeout(() => (window.location.href = dest), 1100);
+        setTimeout(() => (window.location.href = dest), 400);
       }
     });
   </script>
