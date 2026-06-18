@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f4f4;
+        }
+        .carrito {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #fff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            line-height: 40px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        .carrito-icono {
+            font-size: 20px;
+            color: #333;
+        }
+        .carrito-numero {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: red;
+            color: #fff;
+            font-size: 12px;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+        }
+        
+        .producto {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            transition: box-shadow 0.3s;
+        }
+        .producto:hover {
+            box-shadow: 0 0 11px rgba(33,33,33,.2);
+        }
+        .producto img {
+            max-height: 200px;
+            object-fit: cover;
+        }
+        .precio {
+            font-size: 18px;
+            color: #28a745;
+        }
+    </style>
+    <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">TiendaTec</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="index.html">Inicio</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="productos.html">Productos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="registro.html">Registrarse</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="inicio-sesion.html">Iniciar Sesión</a>
+                </li>
+            </ul>
+        </div>
+        <a href="carrito.html" class="carrito">
+            <span class="carrito-icono"><i class="fas fa-shopping-cart"></i></span>
+            <span class="carrito-numero" id="carrito-numero">0</span>
+        </a>
+    </nav>
+
+    <div class="container mt-4">
+        <h2 class="text-center">Productos Destacados</h2>
+        <div class="row">
+            <!-- Primer producto -->
+            <div class="col-md-3 mb-4">
+                <a href="iphone 15.html" class="text-decoration-none text-dark">
+                    <div class="producto text-center">
+                        <img src="https://falabella.scene7.com/is/image/Falabella/127695184_1?wid=800&hei=800&qlt=70" alt="iPhone 15 Pro Max" class="img-fluid">
+                        <h2>iPhone 15 Pro Max 252GB</h2>
+                        <p class="precio">Precio: $999.990</p>
+                        <form onsubmit="agregarAlCarrito(event, 1, 'iPhone 15 Pro Max 252GB', 999.990)">
+                            <input type="number" value="1" min="1" max="10" class="form-control mb-2" id="cantidad-1">
+                            <input type="submit" value="Agregar al carrito" class="btn btn-primary btn-block">
+                        </form>
+                    </div>
+                </a>
+            </div>
+            <!-- Segundo producto -->
+            <div class="col-md-3 mb-4">
+                <a href="samsung-galaxy-s24.html" class="text-decoration-none text-dark">
+                    <div class="producto text-center">
+                        <img src="https://images.samsung.com/is/image/samsung/p6pim/cl/2401/gallery/cl-galaxy-s24-s928-sm-s928bztultl-thumb-539308401?$344_344_PNG$" alt="Samsung Galaxy S24 Ultra" class="img-fluid">
+                        <h2>Samsung Galaxy S24 Ultra</h2>
+                        <p class="precio">Precio: $999.990</p>
+                        <form onsubmit="agregarAlCarrito(event, 2, 'Samsung Galaxy S24 Ultra', 999.990)">
+                            <input type="number" value="1" min="1" max="10" class="form-control mb-2" id="cantidad-2">
+                            <input type="submit" value="Agregar al carrito" class="btn btn-primary btn-block">
+                        </form>
+                    </div>
+                </a>
+            </div>
+            <!-- Tercer producto -->
+            <div class="col-md-3 mb-4">
+                <a href="jbl-negro.html" class="text-decoration-none text-dark">
+                    <div class="producto text-center">
+                        <img src="https://http2.mlstatic.com/D_NQ_NP_998515-MLC31582106203_072019-O.webp" alt="JBL Negro" class="img-fluid">
+                        <h2>JBL Negro</h2>
+                        <p class="precio">Precio: $399.990</p>
+                        <form onsubmit="agregarAlCarrito(event, 3, 'JBL Negro', 399.990)">
+                            <input type="number" value="1" min="1" max="10" class="form-control mb-2" id="cantidad-3">
+                            <input type="submit" value="Agregar al carrito" class="btn btn-primary btn-block">
+                        </form>
+                    </div>
+                </a>
+            </div>
+            <!-- Cuarto producto -->
+            <div class="col-md-3 mb-4">
+                <a href="audifonos-gamer.html" class="text-decoration-none text-dark">
+                    <div class="producto text-center">
+                        <img src="audifonos.jpg" alt="Audifonos Gamer HP DHE-8011" class="img-fluid">
+                        <h2>Audifonos Gamer HP DHE-8011 On Ear Jack 3.5mm</h2>
+                        <p class="precio">Precio: $39.990</p>
+                        <form onsubmit="agregarAlCarrito(event, 4, 'Audifonos Gamer HP DHE-8011', 39.990)">
+                            <input type="number" value="1" min="1" max="10" class="form-control mb-2" id="cantidad-4">
+                            <input type="submit" value="Agregar al carrito" class="btn btn-primary btn-block">
+                        </form>
+                    </div>
+                </a>
+            </div>
+            <!-- Quinto producto -->
+            <div class="col-md-3 mb-4">
+                <a href="honor-magic-5-lite.html" class="text-decoration-none text-dark">
+                    <div class="producto text-center">
+                        <img src="honor.jpg" alt="Honor Magic 5 Lite" class="img-fluid">
+                        <h2>Honor Magic 5 Lite</h2>
+                        <p class="precio">Precio: $500.000</p>
+                        <form onsubmit="agregarAlCarrito(event, 5, 'Honor Magic 5 Lite', 500.000)">
+                            <input type="number" value="1" min="1" max="10" class="form-control mb-2" id="cantidad-5">
+                            <input type="submit" value="Agregar al carrito" class="btn btn-primary btn-block">
+                        </form>
+                    </div>
+                </a>
+            </div>
+            <!-- Sexto producto -->
+            <div class="col-md-3 mb-4">
+                <a href="parlantes-hp.html" class="text-decoration-none text-dark">
+                    <div class="producto text-center">
+                        <img src="hp.jpg" alt="Parlantes PC Gamer HP DHE-6005" class="img-fluid">
+                        <h2>Parlantes PC Gamer HP DHE-6005</h2>
+                        <p class="precio">Precio: $45.990</p>
+                        <form onsubmit="agregarAlCarrito(event, 6, 'Parlantes PC Gamer HP DHE-6005', 45.990)">
+                            <input type="number" value="1" min="1" max="10" class="form-control mb-2" id="cantidad-6">
+                            <input type="submit" value="Agregar al carrito" class="btn btn-primary btn-block">
+                        </form>
+                    </div>
+                </a>
+            </div>
+            <!-- Séptimo producto -->
+            <div class="col-md-3 mb-4">
+                <a href="parlante-bluetooth.html" class="text-decoration-none text-dark">
+                    <div class="producto text-center">
+                        <img src="cargador.jpg" alt="Parlante Bluetooth G" class="img-fluid">
+                        <h2>Parlante Bluetooth G</h2>
+                        <p class="precio">Precio: $24.990</p>
+                        <form onsubmit="agregarAlCarrito(event, 7, 'Parlante Bluetooth G', 15.990 )">
+                            <input type="number" value="1" min="1" max="10" class="form-control mb-2" id="cantidad-7">
+                            <input type="submit" value="Agregar al carrito" class="btn btn-primary btn-block">
+                        </form>
+                    </div>
+                </a>
+            </div>
+            <!-- Octavo producto -->
+            <div class="col-md-3 mb-4">
+                <a href="parlantes-hp.html" class="text-decoration-none text-dark">
+                    <div class="producto text-center">
+                        <img src="hp.jpg" alt="Parlantes PC Gamer HP DHE-6005" class="img-fluid">
+                        <h2>Parlantes PC Gamer HP DHE-6005</h2>
+                        <p class="precio">Precio: $45.990</p>
+                        <form onsubmit="agregarAlCarrito(event, 8, 'Parlantes PC Gamer HP DHE-6005', 45.990)">
+                            <input type="number" value="1" min="1" max="10" class="form-control mb-2" id="cantidad-8">
+                            <input type="submit" value="Agregar al carrito" class="btn btn-primary btn-block">
+                        </form>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+    <!-- Bootstrap JS y jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="carrito.js"></script> 
+</body>
+</html>
