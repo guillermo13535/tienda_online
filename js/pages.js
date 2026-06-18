@@ -435,7 +435,8 @@
 
           <!-- PayPal -->
           <div id="paypalPanel" class="pay-panel" hidden>
-            <p>Serás redirigido a PayPal para completar el pago de forma segura.</p>
+            <p>Paga de forma segura con tu cuenta PayPal (modo demostración).</p>
+            <div id="paypalBtns" style="margin-top:10px"></div>
           </div>
 
           <!-- Transferencia -->
@@ -456,6 +457,8 @@
           <p class="cart-resume__row"><span>Productos</span><span>${money(total)}</span></p>
           <p class="cart-resume__row"><span>Envío</span><span class="ship-free">Gratis</span></p>
           <p class="cart-resume__total"><span>Total</span><strong>${money(total)}</strong></p>
+          <button class="btn btn--outline btn--block" id="geoBtn" style="margin-top:10px">📍 Calcular envío a mi ubicación</button>
+          <div class="integra-result" id="geoShip"></div>
           <button class="btn btn--primary btn--block" id="payBtn" style="margin-top:14px">Pagar ${money(total)}</button>
           <a href="carrito.html" class="co-back">← Volver al carrito</a>
         </aside>
@@ -463,11 +466,35 @@
 
     // Cambiar panel según método
     const panels = { tarjeta: "cardForm", paypal: "paypalPanel", transferencia: "transferPanel" };
+    let paypalRendered = false;
+    let usdRate = 950; // fallback; se actualiza con datos del Banco Central
+
+    function renderPaypal() {
+      const box = document.getElementById("paypalBtns");
+      if (!window.paypal) { box.innerHTML = "<p class='muted'>No se pudo cargar el SDK de PayPal.</p>"; return; }
+      if (paypalRendered) return;
+      paypalRendered = true;
+      if (window.Integrations) {
+        window.Integrations.getIndicators().then((d) => { usdRate = d.dolar.valor; }).catch(() => {});
+      }
+      paypal.Buttons({
+        style: { color: "blue", shape: "pill", label: "pay" },
+        createOrder: (data, actions) => actions.order.create({
+          purchase_units: [{ amount: { value: (total / usdRate).toFixed(2) }, description: "Compra TecnoShop" }]
+        }),
+        onApprove: (data, actions) => actions.order.capture().then(() => finalizar("PayPal")),
+        onError: () => S.showToast("PayPal está en modo demostración")
+      }).render("#paypalBtns");
+    }
+
     function showPanel(method) {
       Object.values(panels).forEach((id) => { document.getElementById(id).hidden = true; });
       document.getElementById(panels[method]).hidden = false;
       wrap.querySelectorAll(".pay-method").forEach((l) =>
         l.classList.toggle("active", l.querySelector("input").value === method));
+      const payBtn = document.getElementById("payBtn");
+      if (method === "paypal") { payBtn.style.display = "none"; renderPaypal(); }
+      else { payBtn.style.display = ""; }
     }
     wrap.querySelectorAll('input[name="pm"]').forEach((r) =>
       r.addEventListener("change", (e) => showPanel(e.target.value)));
@@ -511,6 +538,17 @@
 
     function finalizar(metodoLabel) {
       const orden = "TS-" + Date.now().toString().slice(-8);
+      // Webhook: notificar la compra a un sistema externo (POST)
+      if (window.Integrations) {
+        const items = getCart().map((i) => {
+          const p = findProduct(i.id);
+          return { id: i.id, nombre: p ? p.name : "", qty: i.qty };
+        });
+        window.Integrations.sendWebhook("https://jsonplaceholder.typicode.com/posts", {
+          evento: "compra_realizada", orden, metodo: metodoLabel, total, items, fecha: new Date().toISOString()
+        }).then((r) => console.log("Webhook enviado, HTTP", r.status))
+          .catch((e) => console.warn("Webhook falló:", e.message));
+      }
       wrap.innerHTML = `
         <div class="checkout-success">
           <div class="checkout-success__ico">✅</div>
@@ -532,13 +570,41 @@
       if (method === "tarjeta") {
         if (!validarTarjeta()) { S.showToast("Revisa los datos de la tarjeta"); return; }
         finalizar("Tarjeta de crédito/débito");
-      } else if (method === "paypal") {
-        S.showToast("Procesando pago con PayPal...");
-        setTimeout(() => finalizar("PayPal"), 900);
-      } else {
+      } else if (method === "transferencia") {
         finalizar("Transferencia bancaria");
       }
+      // PayPal usa sus propios botones (data-buy se maneja en renderPaypal)
     });
+
+    // Georreferenciación: calcular envío + clima a la ubicación del cliente
+    const geoBtn = document.getElementById("geoBtn");
+    if (geoBtn) {
+      geoBtn.addEventListener("click", async () => {
+        const out = document.getElementById("geoShip");
+        out.className = "integra-result";
+        out.textContent = "📡 Detectando tu ubicación...";
+        if (!window.Integrations) { out.textContent = "Integraciones no disponibles."; return; }
+        try {
+          const { lat, lon } = await window.Integrations.getPosition();
+          let ciudad = "tu ubicación";
+          try {
+            const g = await window.Integrations.reverseGeocode(lat, lon);
+            ciudad = (g.address && (g.address.city || g.address.town || g.address.village || g.address.state)) || ciudad;
+          } catch (_) {}
+          let clima = "";
+          try {
+            const w = await window.Integrations.getWeather(lat, lon);
+            const [t, e] = window.Integrations.weatherText(w.current.weather_code);
+            clima = ` · ${e} ${w.current.temperature_2m}°C`;
+          } catch (_) {}
+          out.className = "integra-result ok";
+          out.innerHTML = `🚚 Envío gratis a <strong>${ciudad}</strong>${clima}<br><small>Entrega estimada: 2 a 4 días hábiles</small>`;
+        } catch (e) {
+          out.className = "integra-result warn";
+          out.textContent = "⚠️ " + e.message;
+        }
+      });
+    }
   }
 
   /* ---------- Delegación global: Agregar / Comprar ahora ---------- */

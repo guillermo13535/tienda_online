@@ -203,6 +203,7 @@
               <a href="productos.html" ${page === "productos" ? 'class="active"' : ""}>📂 Categorías</a>
               ${catLinks}
               <a href="productos.html?cat=all">Ofertas</a>
+              <a href="integraciones.html" ${page === "integraciones" ? 'class="active"' : ""}>Integraciones</a>
               <span class="ml-catnav__spacer"></span>
               <a href="index.html" ${page === "home" ? 'class="active"' : ""}>Inicio</a>
             </div>
@@ -246,7 +247,7 @@
             <div>
               <h5>Otros sitios</h5>
               <a href="admin.html">Vender</a>
-              <a href="#">Desarrolladores</a>
+              <a href="integraciones.html">Integraciones / APIs</a>
               <a href="#">Tendencias</a>
             </div>
             <div>

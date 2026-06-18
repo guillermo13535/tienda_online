@@ -453,6 +453,21 @@ section.block { padding: 40px 0; }
 .checkout-success__box p:last-child { border-bottom: none; }
 .checkout-success__box span { color: var(--muted); }
 
+/* ===== Integraciones ===== */
+.integra-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+.integra-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+.integra-card h3 { font-family: "Orbitron", sans-serif; font-size: 1.05rem; margin-bottom: 6px; }
+.integra-card p { margin-bottom: 10px; }
+.integra-result { margin-top: 14px; font-size: .92rem; word-break: break-word; }
+.integra-result.ok { color: var(--text); background: rgba(31,210,134,.08); border: 1px solid rgba(31,210,134,.3); border-radius: 10px; padding: 12px; }
+.integra-result.warn { color: var(--warning); background: rgba(255,191,58,.08); border: 1px solid rgba(255,191,58,.3); border-radius: 10px; padding: 12px; }
+.integra-result pre { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow-x: auto; font-size: .8rem; margin: 6px 0; }
+.integra-result details summary { cursor: pointer; color: var(--primary); }
+.integra-result table { margin: 0; }
+.integra-map { height: 240px; border-radius: 10px; margin-top: 14px; display: none; }
+.conv-box { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 14px; }
+.conv-box label { font-weight: 600; font-size: .9rem; }
+
 /* ===== Toast ===== */
 .toast {
   position: fixed; bottom: 24px; left: 50%;
