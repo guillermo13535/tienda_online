@@ -423,6 +423,135 @@
     Auth, Orders
   };
 
+  /* ---------- 🤖 TecnoBot: asistente virtual de compras ---------- */
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  }
+
+  function initAssistant() {
+    const page = document.body.dataset.page || "";
+    if (["login", "registro"].includes(page)) return;
+    if (document.getElementById("botFab")) return;
+
+    const fab = document.createElement("button");
+    fab.id = "botFab";
+    fab.className = "bot-fab";
+    fab.innerHTML = "🤖";
+    fab.setAttribute("aria-label", "Asistente virtual");
+
+    const panel = document.createElement("div");
+    panel.id = "botPanel";
+    panel.className = "bot-panel";
+    panel.innerHTML = `
+      <div class="bot-head">
+        <span>🤖 TecnoBot <small>asistente</small></span>
+        <button id="botClose" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="bot-msgs" id="botMsgs"></div>
+      <div class="bot-quick" id="botQuick"></div>
+      <form class="bot-input" id="botForm">
+        <input id="botText" placeholder="Escribe lo que buscas..." autocomplete="off" />
+        <button aria-label="Enviar">➤</button>
+      </form>`;
+
+    document.body.appendChild(fab);
+    document.body.appendChild(panel);
+
+    const msgs = panel.querySelector("#botMsgs");
+    const quick = panel.querySelector("#botQuick");
+
+    function add(html, who) {
+      const d = document.createElement("div");
+      d.className = "bot-msg " + who;
+      d.innerHTML = html;
+      msgs.appendChild(d);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+    function chips(arr) {
+      quick.innerHTML = arr.map((t) => `<button class="bot-chip">${t}</button>`).join("");
+    }
+    function open() {
+      panel.classList.add("open");
+      fab.classList.add("hidden");
+      if (!msgs.dataset.init) {
+        msgs.dataset.init = "1";
+        const u = Auth.current();
+        add(`¡Hola${u ? " " + u.nombre : ""}! 👋 Soy <strong>TecnoBot</strong>. Te ayudo a encontrar lo que buscas. ¿Qué necesitas hoy?`, "bot");
+        chips(["🔥 Ofertas", "⭐ Más vendidos", "📱 Celulares", "💸 Algo barato"]);
+      }
+    }
+    function close() { panel.classList.remove("open"); fab.classList.remove("hidden"); }
+
+    fab.addEventListener("click", open);
+    panel.querySelector("#botClose").addEventListener("click", close);
+    panel.querySelector("#botForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const inp = panel.querySelector("#botText");
+      const t = inp.value.trim();
+      if (!t) return;
+      add(escapeHtml(t), "user");
+      inp.value = "";
+      setTimeout(() => respond(t), 260);
+    });
+    quick.addEventListener("click", (e) => {
+      const b = e.target.closest(".bot-chip");
+      if (!b) return;
+      add(b.textContent, "user");
+      setTimeout(() => respond(b.textContent.replace(/^[^\wáéíóúÁÉÍÓÚ]+/, "").trim()), 220);
+    });
+
+    function cardLine(p) {
+      return `<a class="bot-prod" href="producto.html?id=${p.id}">
+        <img src="${p.image}" onerror="this.onerror=null;this.src='assets/placeholder.svg'" alt="">
+        <span><strong>${p.name}</strong><small>${money(p.price)}${discountPct(p) > 0 ? ` · ${discountPct(p)}% OFF` : ""}</small></span></a>`;
+    }
+    function showList(list, intro) {
+      if (!list.length) { add("No encontré productos para eso 😕. Prueba con otra palabra o una categoría.", "bot"); return; }
+      add(intro + list.slice(0, 4).map(cardLine).join(""), "bot");
+    }
+
+    function respond(text) {
+      const t = text.toLowerCase();
+      if (/hola|buenas|hey|holi|saludos/.test(t)) {
+        add("¡Hola! 😊 Dime una categoría (celulares, audio, gamer...), una marca, 'ofertas' o un precio máximo.", "bot");
+        return;
+      }
+      if (/gracias|grasias/.test(t)) { add("¡De nada! 🙌 ¿Te ayudo con algo más?", "bot"); return; }
+      if (/oferta|descuento|rebaj|promo/.test(t)) {
+        showList(PRODUCTS.filter((p) => discountPct(p) > 0).sort((a, b) => discountPct(b) - discountPct(a)), "🔥 Estas son las mejores ofertas:");
+        return;
+      }
+      if (/vendido|popular|recomi|mejor/.test(t)) {
+        showList([...PRODUCTS].sort((a, b) => b.sold - a.sold), "⭐ Los más vendidos:");
+        return;
+      }
+      if (/carrito/.test(t)) {
+        const { count, total } = cartTotals();
+        add(count ? `Tienes <strong>${count}</strong> producto(s) por <strong>${money(total)}</strong>. <a href="carrito.html">Ver carrito →</a>` : "Tu carrito está vacío. ¿Te recomiendo algo? 😉", "bot");
+        return;
+      }
+      if (/(barat|económ|economic|menos de|bajo|hasta|presupuesto)/.test(t)) {
+        let max = null;
+        const num = t.replace(/\./g, "").match(/(\d{4,7})/);
+        if (num) max = +num[1];
+        let list = [...PRODUCTS].sort((a, b) => a.price - b.price);
+        if (max) list = list.filter((p) => p.price <= max);
+        showList(list, max ? `💸 Productos hasta ${money(max)}:` : "💸 Los más económicos:");
+        return;
+      }
+      const brands = [...new Set(PRODUCTS.map((p) => brandOf(p)))];
+      const bMatch = brands.find((b) => b !== "Otros" && t.includes(b.toLowerCase()));
+      if (bMatch) { showList(PRODUCTS.filter((p) => brandOf(p) === bMatch), `Productos <strong>${bMatch}</strong>:`); return; }
+      const catMap = [["celular", "smartphones"], ["tel", "smartphones"], ["smartphone", "smartphones"], ["note", "laptops"], ["laptop", "laptops"], ["computador", "laptops"], ["audíf", "audio"], ["audif", "audio"], ["audio", "audio"], ["parlante", "audio"], ["consola", "consolas"], ["play", "consolas"], ["xbox", "consolas"], ["nintendo", "consolas"], ["monitor", "monitores"], ["gamer", "gamer"], ["teclado", "gamer"], ["mouse", "gamer"], ["accesorio", "accesorios"], ["cargador", "accesorios"]];
+      const c = catMap.find(([k]) => t.includes(k));
+      if (c) { showList(PRODUCTS.filter((p) => p.category === c[1]), `Mira estos de <strong>${CATEGORIES[c[1]].label}</strong>:`); return; }
+      const found = PRODUCTS.filter((p) => t.split(/\s+/).some((w) => w.length > 2 && p.name.toLowerCase().includes(w)));
+      if (found.length) { showList(found, "Encontré esto para ti:"); return; }
+      add("Mmm, no estoy seguro 🤔. Puedes pedirme: <em>ofertas</em>, <em>celulares</em>, <em>audífonos</em>, una <em>marca</em> o <em>algo barato</em>.", "bot");
+      chips(["🔥 Ofertas", "📱 Celulares", "🎧 Audio", "🎮 Gamer"]);
+    }
+  }
+
   /* ---------- Init ---------- */
   const PUBLIC_PAGES = ["login", "registro"];
 
@@ -437,6 +566,7 @@
 
     renderChrome();
     updateCartCount();
+    initAssistant();
 
     // Mostrar bienvenida con el logo si se acaba de iniciar sesión
     const welcome = localStorage.getItem("tecnoshop_welcome");
