@@ -482,8 +482,9 @@ section.block { padding: 40px 0; }
 .order-card__items { list-style: none; display: grid; gap: 6px; margin-bottom: 12px; }
 .order-card__items li { display: flex; justify-content: space-between; color: var(--muted); }
 .order-card__items strong { color: var(--text); }
-.order-card__foot { font-size: .9rem; color: var(--muted); }
+.order-card__foot { font-size: .9rem; color: var(--muted); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .badge-ok { color: var(--green); font-weight: 700; }
+.email-status { margin-top: 14px; font-size: .95rem; }
 
 /* ===== Pantalla de bienvenida ===== */
 .welcome-overlay {

@@ -79,6 +79,81 @@
     }
   }
 
+  /* ---------- Generación de boleta ---------- */
+  function buildBoletaHTML(order) {
+    const fecha = new Date(order.fecha).toLocaleString("es-CL");
+    const rows = order.items.map((it) =>
+      `<tr><td>${it.qty}</td><td>${it.nombre}</td><td class="r">${money(it.price)}</td><td class="r">${money(it.price * it.qty)}</td></tr>`
+    ).join("");
+    const neto = Math.round(order.total / 1.19);
+    const iva = order.total - neto;
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>Boleta ${order.id}</title>
+<style>
+  *{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+  body{margin:0;padding:24px;color:#222;background:#f3f3f3}
+  .boleta{max-width:640px;margin:0 auto;background:#fff;border:1px solid #ddd;border-radius:10px;overflow:hidden}
+  .b-head{background:#0d0d16;color:#fff;padding:22px 24px;display:flex;justify-content:space-between;align-items:center}
+  .b-logo{font-weight:900;font-size:1.4rem;letter-spacing:1px}
+  .b-logo span{color:#00e0b8}
+  .b-tag{color:#00e0b8;font-weight:bold;text-align:right;font-size:.9rem}
+  .b-body{padding:24px}
+  .b-meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:.9rem;color:#555;margin-bottom:18px}
+  table{width:100%;border-collapse:collapse;margin-bottom:16px}
+  th,td{padding:9px 8px;border-bottom:1px solid #eee;font-size:.9rem;text-align:left}
+  th{background:#f7f7f7;text-transform:uppercase;font-size:.72rem;color:#666}
+  .r{text-align:right}
+  .tot{margin-left:auto;width:260px}
+  .tot div{display:flex;justify-content:space-between;padding:5px 0;font-size:.92rem}
+  .tot .grand{border-top:2px solid #0d0d16;margin-top:6px;padding-top:8px;font-size:1.15rem;font-weight:bold}
+  .b-foot{background:#f7f7f7;padding:16px 24px;text-align:center;color:#777;font-size:.82rem}
+  @media print{body{background:#fff;padding:0}.boleta{border:none}}
+</style></head><body>
+  <div class="boleta">
+    <div class="b-head">
+      <div class="b-logo">TECNO<span>SHOP</span></div>
+      <div class="b-tag">BOLETA ELECTRÓNICA<br>N° ${order.id}</div>
+    </div>
+    <div class="b-body">
+      <div class="b-meta">
+        <div><strong>Cliente:</strong> ${order.cliente || "Cliente"}<br><strong>Correo:</strong> ${order.correo || "-"}</div>
+        <div style="text-align:right"><strong>Fecha:</strong> ${fecha}<br><strong>Medio de pago:</strong> ${order.metodo}</div>
+      </div>
+      <table>
+        <thead><tr><th>Cant.</th><th>Producto</th><th class="r">P. unit.</th><th class="r">Subtotal</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="tot">
+        <div><span>Neto</span><span>${money(neto)}</span></div>
+        <div><span>IVA (19%)</span><span>${money(iva)}</span></div>
+        <div><span>Envío</span><span>Gratis</span></div>
+        <div class="grand"><span>TOTAL</span><span>${money(order.total)}</span></div>
+      </div>
+    </div>
+    <div class="b-foot">
+      Gracias por tu compra en TecnoShop · ventas@tecnoshop.cl · Santiago, Chile<br>
+      Documento de demostración (sin validez tributaria).
+    </div>
+  </div>
+</body></html>`;
+  }
+
+  function descargarBoleta(html, orden) {
+    const w = window.open("", "_blank");
+    if (w) {
+      w.document.write(html);
+      w.document.close();
+      w.focus();
+      setTimeout(() => { try { w.print(); } catch (_) {} }, 500);
+    } else {
+      const blob = new Blob([html], { type: "text/html" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `boleta-${orden}.html`;
+      a.click();
+    }
+  }
+
   /* ---------- Página: catálogo / resultados ---------- */
   function initCatalog() {
     const grid = document.getElementById("products");
@@ -457,6 +532,10 @@
           <p class="cart-resume__row"><span>Productos</span><span>${money(total)}</span></p>
           <p class="cart-resume__row"><span>Envío</span><span class="ship-free">Gratis</span></p>
           <p class="cart-resume__total"><span>Total</span><strong>${money(total)}</strong></p>
+          <div class="field" style="margin-top:12px">
+            <label for="buyerEmail">Correo para tu boleta</label>
+            <input type="email" id="buyerEmail" class="input" style="width:100%" value="${(S.Auth.current() && S.Auth.current().email) || ""}" placeholder="tucorreo@ejemplo.com">
+          </div>
           <button class="btn btn--outline btn--block" id="geoBtn" style="margin-top:10px">📍 Calcular envío a mi ubicación</button>
           <div class="integra-result" id="geoShip"></div>
           <button class="btn btn--primary btn--block" id="payBtn" style="margin-top:14px">Pagar ${money(total)}</button>
@@ -539,30 +618,35 @@
     function finalizar(metodoLabel) {
       const orden = "TS-" + Date.now().toString().slice(-8);
       const user = S.Auth.current();
+      const emailField = document.getElementById("buyerEmail");
+      const correo = (emailField && emailField.value.trim()) || (user && user.email) || "";
       const cartSnapshot = getCart();
       const items = cartSnapshot.map((i) => {
         const p = findProduct(i.id);
         return { id: i.id, nombre: p ? p.name : "", qty: i.qty, price: p ? p.price : 0 };
       });
 
-      // Guardar el pedido (historial "Mis pedidos")
-      S.Orders.add({
-        id: orden,
-        email: user ? user.email : "invitado",
-        items, total, metodo: metodoLabel,
-        fecha: new Date().toISOString()
-      });
+      const order = {
+        id: orden, email: correo || (user ? user.email : "invitado"), correo,
+        cliente: user ? user.nombre : "Cliente",
+        items, total, metodo: metodoLabel, fecha: new Date().toISOString()
+      };
 
+      // Guardar el pedido (historial "Mis pedidos")
+      S.Orders.add(order);
       // Descontar el stock comprado
       S.decrementStock(cartSnapshot);
 
       // Webhook: notificar la compra a un sistema externo (POST)
       if (window.Integrations) {
         window.Integrations.sendWebhook("https://jsonplaceholder.typicode.com/posts", {
-          evento: "compra_realizada", orden, metodo: metodoLabel, total, items, fecha: new Date().toISOString()
+          evento: "compra_realizada", orden, metodo: metodoLabel, total, items, fecha: order.fecha
         }).then((r) => console.log("Webhook enviado, HTTP", r.status))
           .catch((e) => console.warn("Webhook falló:", e.message));
       }
+
+      // Generar la boleta
+      const boletaHtml = buildBoletaHTML(order);
 
       wrap.innerHTML = `
         <div class="checkout-success">
@@ -570,15 +654,40 @@
           <h2>¡Compra realizada con éxito!</h2>
           <p>Gracias por tu compra en TecnoShop.</p>
           <div class="checkout-success__box">
-            <p><span>N° de orden</span><strong>${orden}</strong></p>
+            <p><span>N° de boleta</span><strong>${orden}</strong></p>
             <p><span>Medio de pago</span><strong>${metodoLabel}</strong></p>
             <p><span>Total pagado</span><strong>${money(total)}</strong></p>
           </div>
-          <p class="muted">(Demostración: no se realizó ningún cobro real.)</p>
-          <a href="pedidos.html" class="btn btn--primary" style="margin-top:18px">Ver mis pedidos</a>
-          <a href="index.html" class="btn btn--outline" style="margin-top:18px">Volver al inicio</a>
+          <p class="email-status" id="emailStatus">📧 Preparando el envío de tu boleta...</p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:18px">
+            <button class="btn btn--primary" id="btnBoleta">🧾 Descargar / Imprimir boleta</button>
+            <a href="pedidos.html" class="btn btn--outline">Ver mis pedidos</a>
+            <a href="index.html" class="btn btn--outline">Volver al inicio</a>
+          </div>
+          <p class="muted" style="margin-top:14px">(Demostración: no se realizó ningún cobro real.)</p>
         </div>`;
       S.clearCart();
+
+      // Botón de descarga/impresión de la boleta
+      document.getElementById("btnBoleta").addEventListener("click", () => descargarBoleta(boletaHtml, orden));
+
+      // Envío de la boleta por correo (EmailJS)
+      const status = document.getElementById("emailStatus");
+      const I = window.Integrations;
+      if (!correo) {
+        status.innerHTML = "🧾 Tu boleta está lista para descargar.";
+      } else if (I && I.emailConfigured && I.emailConfigured()) {
+        status.textContent = `📤 Enviando boleta a ${correo}...`;
+        const resumen = items.map((it) => `${it.qty} x ${it.nombre} — ${money(it.price * it.qty)}`).join("\n");
+        I.sendBoletaEmail({
+          to_email: correo, cliente: order.cliente, orden,
+          fecha: new Date(order.fecha).toLocaleString("es-CL"),
+          metodo: metodoLabel, total: money(total), detalle: resumen
+        }).then(() => { status.innerHTML = `✅ Boleta enviada a <strong>${correo}</strong>`; })
+          .catch(() => { status.innerHTML = `🧾 No se pudo enviar el correo. Descarga tu boleta con el botón.`; });
+      } else {
+        status.innerHTML = `🧾 Boleta lista. <small class="muted">(Para enviarla automáticamente a ${correo}, configura EmailJS en js/integrations.js)</small>`;
+      }
     }
 
     document.getElementById("payBtn").addEventListener("click", () => {
@@ -651,9 +760,17 @@
           <div class="order-card__total">${money(o.total)}</div>
         </div>
         <ul class="order-card__items">${itemsHtml}</ul>
-        <div class="order-card__foot">💳 ${o.metodo} · <span class="badge-ok">✓ Confirmado</span></div>
+        <div class="order-card__foot">💳 ${o.metodo} · <span class="badge-ok">✓ Confirmado</span>
+          <button class="btn btn--outline btn-sm" data-boleta="${o.id}" style="margin-left:auto">🧾 Descargar boleta</button>
+        </div>
       </div>`;
     }).join("");
+
+    wrap.querySelectorAll("[data-boleta]").forEach((b) =>
+      b.addEventListener("click", () => {
+        const o = orders.find((x) => x.id === b.dataset.boleta);
+        if (o) descargarBoleta(buildBoletaHTML(o), o.id);
+      }));
   }
 
   /* ---------- Página: Admin (CRUD de productos, protegido) ---------- */

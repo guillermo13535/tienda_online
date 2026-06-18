@@ -99,11 +99,30 @@ window.Integrations = (function () {
     return { envelope, raw: xml, words: result ? result.textContent.trim() : "(sin resultado)" };
   }
 
+  /* ---------- 6. ENVÍO DE CORREO (EmailJS, sin backend) ---------- */
+  // Para activar el envío real: crea una cuenta gratis en https://www.emailjs.com,
+  // crea un "Email Service" y un "Email Template", y pega aquí tus claves.
+  const EMAILJS_CONFIG = {
+    publicKey: "TU_PUBLIC_KEY",   // <-- reemplazar
+    serviceId: "TU_SERVICE_ID",   // <-- reemplazar
+    templateId: "TU_TEMPLATE_ID"  // <-- reemplazar
+  };
+  function emailConfigured() {
+    return EMAILJS_CONFIG.publicKey && !EMAILJS_CONFIG.publicKey.startsWith("TU_");
+  }
+  async function sendBoletaEmail(params) {
+    if (!window.emailjs) throw new Error("El SDK de EmailJS no está cargado");
+    if (!emailConfigured()) throw new Error("EmailJS no configurado");
+    emailjs.init({ publicKey: EMAILJS_CONFIG.publicKey });
+    return emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, params);
+  }
+
   return {
     getPosition, reverseGeocode,
     getWeather, weatherText,
     getIndicators,
     sendWebhook,
-    buildSoapEnvelope, soapNumberToWords
+    buildSoapEnvelope, soapNumberToWords,
+    emailConfigured, sendBoletaEmail
   };
 })();
