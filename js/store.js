@@ -53,21 +53,42 @@
   function addToCart(id, qty = 1) {
     id = Number(id);
     qty = Math.max(1, parseInt(qty, 10) || 1);
+    const p = findProduct(id);
+    if (!p) return;
+    if (p.stock <= 0) { showToast("😕 Producto agotado"); return; }
+
     const cart = getCart();
     const item = cart.find((i) => i.id === id);
-    if (item) item.qty += qty;
-    else cart.push({ id, qty });
+    const actual = item ? item.qty : 0;
+    let nuevo = actual + qty;
+
+    if (nuevo > p.stock) {
+      nuevo = p.stock;
+      if (item) item.qty = nuevo;
+      else cart.push({ id, qty: nuevo });
+      saveCart(cart);
+      showToast(`Solo quedan ${p.stock} unidades disponibles`);
+      return;
+    }
+
+    if (item) item.qty = nuevo;
+    else cart.push({ id, qty: nuevo });
     saveCart(cart);
-    const p = findProduct(id);
-    showToast(`✓ ${p ? p.name : "Producto"} agregado al carrito`);
+    showToast(`✓ ${p.name} agregado al carrito`);
   }
 
   function setQty(id, qty) {
     id = Number(id);
+    const p = findProduct(id);
     let cart = getCart();
     const item = cart.find((i) => i.id === id);
     if (!item) return;
-    item.qty = parseInt(qty, 10) || 0;
+    let q = parseInt(qty, 10) || 0;
+    if (p && q > p.stock) {
+      q = p.stock;
+      showToast(`Stock máximo: ${p.stock} unidades`);
+    }
+    item.qty = q;
     if (item.qty <= 0) cart = cart.filter((i) => i.id !== id);
     saveCart(cart);
   }

@@ -264,6 +264,16 @@ section.block { padding: 40px 0; }
 .ml-card__rating { color: var(--warning); }
 .ml-card__sold { color: var(--muted); }
 .ml-card__ship { color: var(--green); font-weight: 700; font-size: .85rem; }
+.ml-card__low { color: var(--warning); font-weight: 700; font-size: .82rem; }
+.ml-card__nostock { color: var(--accent); font-weight: 700; font-size: .82rem; }
+.ml-card.is-out .ml-card__media img { opacity: .5; }
+.ml-tag-out {
+  background: var(--accent); color: #fff; font-weight: 800; font-size: .68rem;
+  letter-spacing: 1px; padding: 3px 8px; border-radius: 4px;
+  position: absolute; top: 10px; right: 10px;
+}
+.ml-card__add:disabled { background: var(--line); color: var(--muted); cursor: not-allowed; transform: none; box-shadow: none; }
+.buybox__out { color: var(--accent); font-weight: 800; font-size: 1.1rem; margin: 14px 0; }
 .ml-card__add { margin-top: 10px; padding: 9px; font-size: .9rem; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(14px);} to { opacity: 1; transform: none;} }
 

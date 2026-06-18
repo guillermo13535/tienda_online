@@ -1,214 +1,233 @@
 /* =========================================================
    TecnoShop - Catálogo central de productos
    Precios en pesos chilenos (CLP) como enteros.
-   Estructura estilo Mercado Libre: precio anterior (descuento),
-   cuotas, envío gratis, vendidos, stock, condición, etc.
+   Cada producto tiene "stock" (límite de unidades disponibles).
    ========================================================= */
 
 const PRODUCTS = [
+  // ---------- Smartphones ----------
   {
-    id: 1,
-    name: "iPhone 15 Pro Max 256GB Titanio Natural",
-    category: "smartphones",
-    price: 999990,
-    oldPrice: 1199990,
-    installments: 12,
-    freeShipping: true,
-    full: true,
-    condition: "Nuevo",
-    sold: 250,
-    stock: 15,
-    rating: 5,
+    id: 1, name: "iPhone 15 Pro Max 256GB Titanio Natural", category: "smartphones",
+    price: 999990, oldPrice: 1199990, installments: 12, freeShipping: true, full: true,
+    condition: "Nuevo", sold: 250, stock: 15, rating: 5,
     image: "https://falabella.scene7.com/is/image/Falabella/127695184_1?wid=800&hei=800&qlt=70",
-    gallery: [
-      "https://falabella.scene7.com/is/image/Falabella/127695184_1?wid=800&hei=800&qlt=70",
-      "https://i.blogs.es/718a10/img_2085/500_333.jpeg"
-    ],
-    description: "El iPhone 15 Pro Max combina el chip A16 Bionic, pantalla OLED de 6.1\" y Dynamic Island. Resistencia al agua IP68 y cámara profesional.",
-    specs: {
-      "Marca": "Apple",
-      "Sistema operativo": "iOS 17",
-      "Pantalla": "OLED 6.1\" - 2556 x 1179 px",
-      "Procesador": "Chip A16 Bionic",
-      "Almacenamiento": "256 GB",
-      "Resistencia": "IP68",
-      "Garantía": "1 año"
-    }
+    gallery: ["https://falabella.scene7.com/is/image/Falabella/127695184_1?wid=800&hei=800&qlt=70"],
+    description: "El iPhone 15 Pro Max combina el chip A17 Pro, pantalla OLED de 6.7\" y diseño en titanio. Resistencia IP68 y cámara profesional.",
+    specs: { "Marca": "Apple", "Sistema operativo": "iOS 17", "Pantalla": "OLED 6.7\"", "Procesador": "A17 Pro", "Almacenamiento": "256 GB", "Garantía": "1 año" }
   },
   {
-    id: 2,
-    name: "Samsung Galaxy S24 Ultra 256GB",
-    category: "smartphones",
-    price: 999990,
-    oldPrice: 1099990,
-    installments: 12,
-    freeShipping: true,
-    full: true,
-    condition: "Nuevo",
-    sold: 180,
-    stock: 10,
-    rating: 5,
+    id: 2, name: "Samsung Galaxy S24 Ultra 256GB", category: "smartphones",
+    price: 999990, oldPrice: 1099990, installments: 12, freeShipping: true, full: true,
+    condition: "Nuevo", sold: 180, stock: 10, rating: 5,
     image: "https://images.samsung.com/is/image/samsung/p6pim/cl/2401/gallery/cl-galaxy-s24-s928-sm-s928bztultl-thumb-539308401?$344_344_PNG$",
-    gallery: [
-      "https://images.samsung.com/is/image/samsung/p6pim/cl/2401/gallery/cl-galaxy-s24-s928-sm-s928bztultl-thumb-539308401?$344_344_PNG$"
-    ],
-    description: "Galaxy S24 Ultra con S Pen integrado, pantalla Dynamic AMOLED 2X de 6.8\" y cámara de 200 MP. Potenciado con IA de Galaxy.",
-    specs: {
-      "Marca": "Samsung",
-      "Sistema operativo": "Android 14 / One UI 6.1",
-      "Pantalla": "Dynamic AMOLED 2X 6.8\"",
-      "Procesador": "Snapdragon 8 Gen 3",
-      "Almacenamiento": "256 GB",
-      "Cámara": "200 MP principal",
-      "Garantía": "1 año"
-    }
+    gallery: ["https://images.samsung.com/is/image/samsung/p6pim/cl/2401/gallery/cl-galaxy-s24-s928-sm-s928bztultl-thumb-539308401?$344_344_PNG$"],
+    description: "Galaxy S24 Ultra con S Pen integrado, pantalla Dynamic AMOLED 2X de 6.8\" y cámara de 200 MP potenciada con IA.",
+    specs: { "Marca": "Samsung", "Sistema operativo": "Android 14", "Pantalla": "AMOLED 6.8\"", "Procesador": "Snapdragon 8 Gen 3", "Almacenamiento": "256 GB", "Garantía": "1 año" }
   },
   {
-    id: 3,
-    name: "Audífonos JBL Tune Inalámbricos Negro",
-    category: "audio",
-    price: 399990,
-    oldPrice: 499990,
-    installments: 10,
-    freeShipping: true,
-    full: false,
-    condition: "Nuevo",
-    sold: 540,
-    stock: 30,
-    rating: 4,
-    image: "https://http2.mlstatic.com/D_NQ_NP_998515-MLC31582106203_072019-O.webp",
-    gallery: [
-      "https://http2.mlstatic.com/D_NQ_NP_998515-MLC31582106203_072019-O.webp"
-    ],
-    description: "Audífonos JBL con sonido JBL Pure Bass, conexión inalámbrica y batería de larga duración. Comodidad para todo el día.",
-    specs: {
-      "Marca": "JBL",
-      "Tipo": "Over-ear inalámbrico",
-      "Conectividad": "Bluetooth 5.0",
-      "Batería": "Hasta 40 horas",
-      "Garantía": "1 año"
-    }
-  },
-  {
-    id: 4,
-    name: "Audífonos Gamer HP DHE-8011 con Micrófono",
-    category: "gamer",
-    price: 39990,
-    oldPrice: 59990,
-    installments: 6,
-    freeShipping: false,
-    full: true,
-    condition: "Nuevo",
-    sold: 1200,
-    stock: 80,
-    rating: 4,
-    image: "assets/audifonos.jpg",
-    gallery: ["assets/audifonos.jpg"],
-    description: "Audífonos gamer HP DHE-8011 On-Ear con conector Jack 3.5mm, micrófono incorporado y sonido envolvente para tus partidas.",
-    specs: {
-      "Marca": "HP",
-      "Tipo": "On-ear gamer",
-      "Conexión": "Jack 3.5 mm",
-      "Micrófono": "Sí, incorporado",
-      "Garantía": "6 meses"
-    }
-  },
-  {
-    id: 5,
-    name: "Honor Magic 5 Lite 256GB",
-    category: "smartphones",
-    price: 500000,
-    oldPrice: 600000,
-    installments: 12,
-    freeShipping: true,
-    full: false,
-    condition: "Nuevo",
-    sold: 95,
-    stock: 20,
-    rating: 4,
-    image: "assets/honor.jpg",
-    gallery: ["assets/honor.jpg"],
+    id: 5, name: "Honor Magic 5 Lite 256GB", category: "smartphones",
+    price: 500000, oldPrice: 600000, installments: 12, freeShipping: true, full: false,
+    condition: "Nuevo", sold: 95, stock: 20, rating: 4,
+    image: "assets/honor.jpg", gallery: ["assets/honor.jpg"],
     description: "Honor Magic 5 Lite con pantalla curva AMOLED de 6.67\", batería de 5100 mAh y cámara triple de 64 MP.",
-    specs: {
-      "Marca": "Honor",
-      "Sistema operativo": "Android 12 / Magic UI",
-      "Pantalla": "AMOLED 6.67\" 120Hz",
-      "Batería": "5100 mAh",
-      "Cámara": "64 MP triple",
-      "Garantía": "1 año"
-    }
+    specs: { "Marca": "Honor", "Sistema operativo": "Android 12", "Pantalla": "AMOLED 6.67\" 120Hz", "Batería": "5100 mAh", "Cámara": "64 MP", "Garantía": "1 año" }
   },
   {
-    id: 6,
-    name: "Parlantes PC Gamer HP DHE-6005 RGB",
-    category: "gamer",
-    price: 45990,
-    oldPrice: 69990,
-    installments: 6,
-    freeShipping: false,
-    full: true,
-    condition: "Nuevo",
-    sold: 870,
-    stock: 60,
-    rating: 5,
-    image: "assets/hp.jpg",
-    gallery: ["assets/hp.jpg"],
+    id: 9, name: "Xiaomi Redmi Note 13 128GB", category: "smartphones",
+    price: 199990, oldPrice: 259990, installments: 6, freeShipping: true, full: true,
+    condition: "Nuevo", sold: 1450, stock: 40, rating: 5,
+    image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&q=70",
+    gallery: ["https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&q=70"],
+    description: "Xiaomi Redmi Note 13 con pantalla AMOLED 6.67\", cámara de 108 MP y carga rápida de 33W.",
+    specs: { "Marca": "Xiaomi", "Sistema operativo": "Android 13 / MIUI", "Pantalla": "AMOLED 6.67\"", "Cámara": "108 MP", "Almacenamiento": "128 GB", "Garantía": "1 año" }
+  },
+  {
+    id: 10, name: "Motorola Moto G84 5G 256GB", category: "smartphones",
+    price: 249990, oldPrice: 299990, installments: 9, freeShipping: true, full: false,
+    condition: "Nuevo", sold: 620, stock: 25, rating: 4,
+    image: "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=600&q=70",
+    gallery: ["https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=600&q=70"],
+    description: "Motorola Moto G84 5G con pantalla pOLED de 6.5\", 12 GB de RAM y batería de 5000 mAh.",
+    specs: { "Marca": "Motorola", "Conectividad": "5G", "Pantalla": "pOLED 6.5\"", "RAM": "12 GB", "Almacenamiento": "256 GB", "Garantía": "1 año" }
+  },
+
+  // ---------- Notebooks ----------
+  {
+    id: 11, name: "Notebook Lenovo IdeaPad 3 Ryzen 5 8GB", category: "laptops",
+    price: 399990, oldPrice: 499990, installments: 12, freeShipping: true, full: true,
+    condition: "Nuevo", sold: 340, stock: 12, rating: 4,
+    image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=70",
+    gallery: ["https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=70"],
+    description: "Notebook Lenovo IdeaPad 3 con AMD Ryzen 5, 8 GB de RAM, SSD de 512 GB y pantalla Full HD de 15.6\".",
+    specs: { "Marca": "Lenovo", "Procesador": "AMD Ryzen 5", "RAM": "8 GB", "Almacenamiento": "SSD 512 GB", "Pantalla": "15.6\" Full HD", "Garantía": "1 año" }
+  },
+  {
+    id: 12, name: "Notebook Gamer ASUS TUF F15 RTX 4060", category: "laptops",
+    price: 1099990, oldPrice: 1299990, installments: 12, freeShipping: true, full: true,
+    condition: "Nuevo", sold: 130, stock: 6, rating: 5,
+    image: "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=600&q=70",
+    gallery: ["https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=600&q=70"],
+    description: "Notebook gamer ASUS TUF F15 con Intel Core i7, RTX 4060, 16 GB de RAM y pantalla 144Hz.",
+    specs: { "Marca": "ASUS", "Procesador": "Intel Core i7", "Gráfica": "RTX 4060", "RAM": "16 GB", "Pantalla": "15.6\" 144Hz", "Garantía": "1 año" }
+  },
+  {
+    id: 13, name: "Apple MacBook Air M2 13\" 256GB", category: "laptops",
+    price: 1199990, oldPrice: 1399990, installments: 12, freeShipping: true, full: false,
+    condition: "Nuevo", sold: 210, stock: 9, rating: 5,
+    image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&q=70",
+    gallery: ["https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&q=70"],
+    description: "MacBook Air con chip M2, pantalla Liquid Retina de 13.6\", diseño ultradelgado y hasta 18 horas de batería.",
+    specs: { "Marca": "Apple", "Procesador": "Chip M2", "RAM": "8 GB", "Almacenamiento": "256 GB", "Pantalla": "13.6\" Liquid Retina", "Garantía": "1 año" }
+  },
+
+  // ---------- Gamer ----------
+  {
+    id: 4, name: "Audífonos Gamer HP DHE-8011 con Micrófono", category: "gamer",
+    price: 39990, oldPrice: 59990, installments: 6, freeShipping: false, full: true,
+    condition: "Nuevo", sold: 1200, stock: 80, rating: 4,
+    image: "assets/audifonos.jpg", gallery: ["assets/audifonos.jpg"],
+    description: "Audífonos gamer HP DHE-8011 On-Ear con conector Jack 3.5mm, micrófono incorporado y sonido envolvente.",
+    specs: { "Marca": "HP", "Tipo": "On-ear gamer", "Conexión": "Jack 3.5 mm", "Micrófono": "Sí", "Garantía": "6 meses" }
+  },
+  {
+    id: 6, name: "Parlantes PC Gamer HP DHE-6005 RGB", category: "gamer",
+    price: 45990, oldPrice: 69990, installments: 6, freeShipping: false, full: true,
+    condition: "Nuevo", sold: 870, stock: 60, rating: 5,
+    image: "assets/hp.jpg", gallery: ["assets/hp.jpg"],
     description: "Parlantes gamer HP DHE-6005 con iluminación LED RGB, sonido estéreo potente y conexión USB + Jack 3.5mm.",
-    specs: {
-      "Marca": "HP",
-      "Tipo": "Parlantes 2.0 RGB",
-      "Potencia": "6W",
-      "Conexión": "USB + 3.5 mm",
-      "Garantía": "6 meses"
-    }
+    specs: { "Marca": "HP", "Tipo": "Parlantes 2.0 RGB", "Potencia": "6W", "Conexión": "USB + 3.5 mm", "Garantía": "6 meses" }
   },
   {
-    id: 7,
-    name: "Parlante Bluetooth Portátil G Resistente al Agua",
-    category: "audio",
-    price: 24990,
-    oldPrice: 34990,
-    installments: 3,
-    freeShipping: false,
-    full: false,
-    condition: "Nuevo",
-    sold: 2100,
-    stock: 150,
-    rating: 4,
-    image: "assets/cargador.jpg",
-    gallery: ["assets/cargador.jpg"],
+    id: 14, name: "Teclado Mecánico Redragon Kumara RGB", category: "gamer",
+    price: 34990, oldPrice: 49990, installments: 3, freeShipping: false, full: true,
+    condition: "Nuevo", sold: 2300, stock: 50, rating: 5,
+    image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600&q=70",
+    gallery: ["https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600&q=70"],
+    description: "Teclado mecánico Redragon Kumara con switches azules, iluminación RGB y estructura compacta TKL.",
+    specs: { "Marca": "Redragon", "Tipo": "Mecánico TKL", "Switch": "Outemu Blue", "Iluminación": "RGB", "Garantía": "1 año" }
+  },
+  {
+    id: 15, name: "Mouse Gamer Logitech G203 LIGHTSYNC", category: "gamer",
+    price: 24990, oldPrice: 34990, installments: 3, freeShipping: false, full: true,
+    condition: "Nuevo", sold: 3100, stock: 70, rating: 5,
+    image: "https://images.unsplash.com/photo-1527814050087-3793815479db?w=600&q=70",
+    gallery: ["https://images.unsplash.com/photo-1527814050087-3793815479db?w=600&q=70"],
+    description: "Mouse gamer Logitech G203 con sensor de 8000 DPI, iluminación RGB LIGHTSYNC y 6 botones programables.",
+    specs: { "Marca": "Logitech", "Sensor": "8000 DPI", "Botones": "6 programables", "Iluminación": "RGB", "Garantía": "2 años" }
+  },
+  {
+    id: 16, name: "Silla Gamer Cougar Armor Ergonómica", category: "gamer",
+    price: 199990, oldPrice: 259990, installments: 12, freeShipping: true, full: false,
+    condition: "Nuevo", sold: 540, stock: 4, rating: 4,
+    image: "https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=600&q=70",
+    gallery: ["https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=600&q=70"],
+    description: "Silla gamer Cougar Armor con respaldo reclinable hasta 180°, cojines lumbar y cervical, y apoyabrazos ajustables.",
+    specs: { "Marca": "Cougar", "Reclinación": "Hasta 180°", "Material": "Cuero sintético", "Peso máximo": "120 kg", "Garantía": "1 año" }
+  },
+
+  // ---------- Audio ----------
+  {
+    id: 3, name: "Audífonos JBL Tune Inalámbricos Negro", category: "audio",
+    price: 399990, oldPrice: 499990, installments: 10, freeShipping: true, full: false,
+    condition: "Nuevo", sold: 540, stock: 30, rating: 4,
+    image: "https://http2.mlstatic.com/D_NQ_NP_998515-MLC31582106203_072019-O.webp",
+    gallery: ["https://http2.mlstatic.com/D_NQ_NP_998515-MLC31582106203_072019-O.webp"],
+    description: "Audífonos JBL con sonido JBL Pure Bass, conexión inalámbrica y batería de larga duración.",
+    specs: { "Marca": "JBL", "Tipo": "Over-ear inalámbrico", "Conectividad": "Bluetooth 5.0", "Batería": "40 horas", "Garantía": "1 año" }
+  },
+  {
+    id: 7, name: "Parlante Bluetooth Portátil G Resistente al Agua", category: "audio",
+    price: 24990, oldPrice: 34990, installments: 3, freeShipping: false, full: false,
+    condition: "Nuevo", sold: 2100, stock: 150, rating: 4,
+    image: "assets/cargador.jpg", gallery: ["assets/cargador.jpg"],
     description: "Parlante portátil Bluetooth compacto, resistente a salpicaduras, ideal para llevar tu música a todas partes.",
-    specs: {
-      "Tipo": "Parlante portátil",
-      "Conectividad": "Bluetooth 5.0",
-      "Batería": "Hasta 8 horas",
-      "Resistencia": "IPX4",
-      "Garantía": "6 meses"
-    }
+    specs: { "Tipo": "Parlante portátil", "Conectividad": "Bluetooth 5.0", "Batería": "8 horas", "Resistencia": "IPX4", "Garantía": "6 meses" }
   },
   {
-    id: 8,
-    name: "Parlante JBL PartyBox 710 800W con Luces",
-    category: "audio",
-    price: 709990,
-    oldPrice: 899990,
-    installments: 12,
-    freeShipping: true,
-    full: true,
-    condition: "Nuevo",
-    sold: 60,
-    stock: 8,
-    rating: 5,
-    image: "assets/jbl.jpg",
-    gallery: ["assets/jbl.jpg"],
-    description: "Parlante JBL PartyBox 710 con 800W de potencia, espectáculo de luces dinámico y sonido JBL de alta fidelidad para tus fiestas.",
-    specs: {
-      "Marca": "JBL",
-      "Potencia": "800 W RMS",
-      "Conectividad": "Bluetooth + entradas para instrumentos",
-      "Luces": "Show de luces dinámico",
-      "Garantía": "1 año"
-    }
+    id: 8, name: "Parlante JBL PartyBox 710 800W con Luces", category: "audio",
+    price: 709990, oldPrice: 899990, installments: 12, freeShipping: true, full: true,
+    condition: "Nuevo", sold: 60, stock: 8, rating: 5,
+    image: "assets/jbl.jpg", gallery: ["assets/jbl.jpg"],
+    description: "Parlante JBL PartyBox 710 con 800W de potencia, espectáculo de luces dinámico y sonido JBL de alta fidelidad.",
+    specs: { "Marca": "JBL", "Potencia": "800 W RMS", "Conectividad": "Bluetooth", "Luces": "Show dinámico", "Garantía": "1 año" }
+  },
+  {
+    id: 22, name: "Audífonos Sony WH-1000XM5 Noise Cancelling", category: "audio",
+    price: 329990, oldPrice: 429990, installments: 12, freeShipping: true, full: true,
+    condition: "Nuevo", sold: 410, stock: 22, rating: 5,
+    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=70",
+    gallery: ["https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=70"],
+    description: "Audífonos Sony WH-1000XM5 con cancelación de ruido líder, hasta 30 horas de batería y audio Hi-Res.",
+    specs: { "Marca": "Sony", "Tipo": "Over-ear", "Cancelación de ruido": "Sí, adaptativa", "Batería": "30 horas", "Garantía": "1 año" }
+  },
+
+  // ---------- Monitores ----------
+  {
+    id: 17, name: "Monitor Samsung 24\" 144Hz Full HD", category: "monitores",
+    price: 149990, oldPrice: 199990, installments: 9, freeShipping: true, full: true,
+    condition: "Nuevo", sold: 760, stock: 18, rating: 5,
+    image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600&q=70",
+    gallery: ["https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600&q=70"],
+    description: "Monitor Samsung de 24\" con panel a 144Hz, resolución Full HD y tiempo de respuesta de 1ms, ideal para gaming.",
+    specs: { "Marca": "Samsung", "Tamaño": "24\"", "Resolución": "1920 x 1080", "Refresco": "144Hz", "Respuesta": "1 ms", "Garantía": "1 año" }
+  },
+  {
+    id: 18, name: "Monitor LG UltraGear 27\" QHD 165Hz", category: "monitores",
+    price: 279990, oldPrice: 349990, installments: 12, freeShipping: true, full: false,
+    condition: "Nuevo", sold: 320, stock: 7, rating: 5,
+    image: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=600&q=70",
+    gallery: ["https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=600&q=70"],
+    description: "Monitor LG UltraGear de 27\" con resolución QHD, 165Hz, panel IPS y compatibilidad G-Sync.",
+    specs: { "Marca": "LG", "Tamaño": "27\"", "Resolución": "2560 x 1440", "Refresco": "165Hz", "Panel": "IPS", "Garantía": "1 año" }
+  },
+
+  // ---------- Consolas ----------
+  {
+    id: 19, name: "Consola PlayStation 5 Slim 1TB", category: "consolas",
+    price: 549990, oldPrice: 649990, installments: 12, freeShipping: true, full: true,
+    condition: "Nuevo", sold: 980, stock: 5, rating: 5,
+    image: "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=600&q=70",
+    gallery: ["https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=600&q=70"],
+    description: "PlayStation 5 Slim con 1TB de almacenamiento, lector de discos y mando DualSense con respuesta háptica.",
+    specs: { "Marca": "Sony", "Almacenamiento": "1 TB SSD", "Resolución": "Hasta 4K", "Incluye": "Mando DualSense", "Garantía": "1 año" }
+  },
+  {
+    id: 20, name: "Consola Xbox Series S 512GB", category: "consolas",
+    price: 299990, oldPrice: 349990, installments: 9, freeShipping: true, full: false,
+    condition: "Nuevo", sold: 670, stock: 0, rating: 4,
+    image: "https://images.unsplash.com/photo-1621259182978-fbf93132d53d?w=600&q=70",
+    gallery: ["https://images.unsplash.com/photo-1621259182978-fbf93132d53d?w=600&q=70"],
+    description: "Xbox Series S, la consola Xbox más compacta, totalmente digital con 512 GB SSD y juegos a 1440p.",
+    specs: { "Marca": "Microsoft", "Almacenamiento": "512 GB SSD", "Resolución": "1440p", "Tipo": "Digital", "Garantía": "1 año" }
+  },
+  {
+    id: 21, name: "Nintendo Switch OLED Blanco", category: "consolas",
+    price: 379990, oldPrice: 429990, installments: 12, freeShipping: true, full: true,
+    condition: "Nuevo", sold: 1120, stock: 14, rating: 5,
+    image: "https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?w=600&q=70",
+    gallery: ["https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?w=600&q=70"],
+    description: "Nintendo Switch modelo OLED con pantalla de 7\", colores vibrantes, base con puerto LAN y 64 GB de almacenamiento.",
+    specs: { "Marca": "Nintendo", "Pantalla": "OLED 7\"", "Almacenamiento": "64 GB", "Modos": "TV / Sobremesa / Portátil", "Garantía": "1 año" }
+  },
+
+  // ---------- Accesorios ----------
+  {
+    id: 23, name: "Cargador GaN 65W USB-C Carga Rápida", category: "accesorios",
+    price: 29990, oldPrice: 39990, installments: 3, freeShipping: false, full: true,
+    condition: "Nuevo", sold: 1850, stock: 200, rating: 5,
+    image: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&q=70",
+    gallery: ["https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&q=70"],
+    description: "Cargador GaN de 65W con doble puerto USB-C, carga rápida para notebooks, tablets y smartphones.",
+    specs: { "Potencia": "65W", "Puertos": "2x USB-C", "Tecnología": "GaN", "Compatibilidad": "Universal", "Garantía": "1 año" }
+  },
+  {
+    id: 24, name: "Power Bank 20000mAh Carga Rápida 22.5W", category: "accesorios",
+    price: 24990, oldPrice: 34990, installments: 3, freeShipping: false, full: false,
+    condition: "Nuevo", sold: 2750, stock: 90, rating: 4,
+    image: "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=600&q=70",
+    gallery: ["https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=600&q=70"],
+    description: "Batería externa de 20000mAh con carga rápida de 22.5W, pantalla digital y múltiples puertos de salida.",
+    specs: { "Capacidad": "20000 mAh", "Potencia": "22.5W", "Puertos": "USB-C + 2x USB-A", "Pantalla": "Digital LED", "Garantía": "6 meses" }
   }
 ];
 
@@ -216,6 +235,13 @@ const PRODUCTS = [
 const CATEGORIES = {
   all: { label: "Todos", icon: "🛍️" },
   smartphones: { label: "Celulares", icon: "📱" },
+  laptops: { label: "Notebooks", icon: "💻" },
   gamer: { label: "Gamer", icon: "🎮" },
-  audio: { label: "Audio", icon: "🎧" }
+  audio: { label: "Audio", icon: "🎧" },
+  monitores: { label: "Monitores", icon: "🖥️" },
+  consolas: { label: "Consolas", icon: "🕹️" },
+  accesorios: { label: "Accesorios", icon: "🔌" }
 };
+
+// Imagen de respaldo si una URL externa no carga
+const IMG_FALLBACK = "assets/placeholder.svg";

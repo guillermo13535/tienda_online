@@ -9,14 +9,24 @@
   const { money, stars, findProduct, getCart, cartTotals, discountPct, installmentText } = S;
 
   /* ---------- Tarjeta de producto estilo ML ---------- */
+  const FB = `onerror="this.onerror=null;this.src='assets/placeholder.svg'"`;
+
+  function stockNote(p) {
+    if (p.stock <= 0) return `<div class="ml-card__nostock">Sin stock</div>`;
+    if (p.stock <= 5) return `<div class="ml-card__low">¡Últimas ${p.stock} unidades!</div>`;
+    return "";
+  }
+
   function productCard(p) {
     const off = discountPct(p);
     const inst = installmentText(p);
+    const agotado = p.stock <= 0;
     return `
-      <article class="ml-card">
+      <article class="ml-card ${agotado ? "is-out" : ""}">
         <a href="producto.html?id=${p.id}" class="ml-card__media">
           ${p.full ? `<span class="ml-tag-full">FULL</span>` : ""}
-          <img src="${p.image}" alt="${p.name}" loading="lazy">
+          ${agotado ? `<span class="ml-tag-out">AGOTADO</span>` : ""}
+          <img src="${p.image}" alt="${p.name}" loading="lazy" ${FB}>
         </a>
         <div class="ml-card__body">
           ${p.oldPrice && off > 0 ? `<span class="ml-card__old">${money(p.oldPrice)}</span>` : ""}
@@ -31,7 +41,10 @@
             <span class="ml-card__sold">${p.sold} vendidos</span>
           </div>
           ${p.freeShipping ? `<div class="ml-card__ship">Envío gratis</div>` : ""}
-          <button class="btn btn--primary ml-card__add" data-add="${p.id}">Agregar al carrito</button>
+          ${stockNote(p)}
+          <button class="btn btn--primary ml-card__add" data-add="${p.id}" ${agotado ? "disabled" : ""}>
+            ${agotado ? "Sin stock" : "Agregar al carrito"}
+          </button>
         </div>
       </article>`;
   }
@@ -81,7 +94,15 @@
       sort: "default"
     };
 
-    // Reflejar búsqueda en el título y en el input del header
+    // Construir chips de filtro dinámicamente desde CATEGORIES
+    const filters = document.getElementById("filters");
+    if (filters && !filters.children.length) {
+      filters.innerHTML = Object.entries(CATEGORIES)
+        .map(([key, c]) => `<button class="chip" data-filter="${key}">${c.label}</button>`)
+        .join("");
+    }
+
+    // Reflejar búsqueda en el input del header
     const headerSearch = document.getElementById("searchInput");
     if (headerSearch && state.search) headerSearch.value = state.search;
 
@@ -117,9 +138,9 @@
       grid.innerHTML = list.map(productCard).join("");
     }
 
-    const filters = document.getElementById("filters");
-    if (filters) {
-      filters.addEventListener("click", (e) => {
+    const filtersEl = document.getElementById("filters");
+    if (filtersEl) {
+      filtersEl.addEventListener("click", (e) => {
         const btn = e.target.closest(".chip");
         if (!btn) return;
         state.filter = btn.dataset.filter;
@@ -175,11 +196,11 @@
         <!-- Galería -->
         <div class="pdp__gallery">
           <div class="pdp__main">
-            <img src="${p.image}" alt="${p.name}" id="mainImg">
+            <img src="${p.image}" alt="${p.name}" id="mainImg" ${FB}>
           </div>
           <div class="pdp__thumbs">
             ${p.gallery.map((g, i) =>
-              `<button class="pdp__thumb ${i === 0 ? "active" : ""}" data-img="${g}"><img src="${g}" alt="vista ${i + 1}"></button>`
+              `<button class="pdp__thumb ${i === 0 ? "active" : ""}" data-img="${g}"><img src="${g}" alt="vista ${i + 1}" ${FB}></button>`
             ).join("")}
           </div>
         </div>
@@ -212,15 +233,16 @@
         <aside class="pdp__buybox">
           ${p.freeShipping ? `<p class="buybox__ship">🚚 <strong>Envío gratis</strong> a todo el país</p>` : `<p class="buybox__ship muted">Costo de envío a calcular</p>`}
           ${p.full ? `<p class="buybox__full"><span class="ml-tag-full">FULL</span> Llega más rápido</p>` : ""}
-          <p class="buybox__stock">Stock disponible <small>(${p.stock} unidades)</small></p>
-
-          <div class="buybox__qty">
-            <label for="detailQty">Cantidad:</label>
-            <select id="detailQty" class="select">${qtyOptions}</select>
-          </div>
-
-          <button class="btn btn--primary btn--block" data-buy="${p.id}" data-qty-from="detailQty">Comprar ahora</button>
-          <button class="btn btn--outline btn--block" data-add="${p.id}" data-qty-from="detailQty" style="margin-top:10px">Agregar al carrito</button>
+          ${p.stock > 0
+            ? `<p class="buybox__stock">Stock disponible <small>(${p.stock} unidades)</small></p>
+               <div class="buybox__qty">
+                 <label for="detailQty">Cantidad:</label>
+                 <select id="detailQty" class="select">${qtyOptions}</select>
+               </div>
+               <button class="btn btn--primary btn--block" data-buy="${p.id}" data-qty-from="detailQty">Comprar ahora</button>
+               <button class="btn btn--outline btn--block" data-add="${p.id}" data-qty-from="detailQty" style="margin-top:10px">Agregar al carrito</button>`
+            : `<p class="buybox__out">😕 Producto agotado</p>
+               <button class="btn btn--block" disabled style="background:var(--line);color:var(--muted);cursor:not-allowed">Sin stock</button>`}
 
           <div class="buybox__seller">
             <p>Vendido por <strong>TecnoShop Oficial</strong></p>
@@ -283,7 +305,7 @@
           <tr>
             <td data-label="Producto">
               <div class="prod-cell">
-                <img src="${p.image}" alt="${p.name}">
+                <img src="${p.image}" alt="${p.name}" onerror="this.onerror=null;this.src='assets/placeholder.svg'">
                 <a href="producto.html?id=${p.id}">${p.name}</a>
               </div>
             </td>
@@ -368,7 +390,7 @@
       const p = findProduct(i.id);
       if (!p) return "";
       return `<div class="co-item">
-        <img src="${p.image}" alt="${p.name}">
+        <img src="${p.image}" alt="${p.name}" onerror="this.onerror=null;this.src='assets/placeholder.svg'">
         <div><span>${p.name}</span><small>${i.qty} x ${money(p.price)}</small></div>
         <strong>${money(p.price * i.qty)}</strong>
       </div>`;
