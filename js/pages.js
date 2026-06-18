@@ -161,38 +161,95 @@
     const emptyMsg = document.getElementById("emptyMsg");
     const titleEl = document.getElementById("catalogTitle");
     const countEl = document.getElementById("resultCount");
+    const bar = document.getElementById("filtersBar");
 
     const params = new URLSearchParams(location.search);
     const state = {
       filter: params.get("cat") || "all",
       search: params.get("q") || "",
+      brands: new Set(),
+      priceMin: null,
+      priceMax: null,
+      freeShipping: false,
+      discountOnly: false,
       sort: "default"
     };
 
-    // Construir chips de filtro dinámicamente desde CATEGORIES
-    const filters = document.getElementById("filters");
-    if (filters && !filters.children.length) {
-      filters.innerHTML = Object.entries(CATEGORIES)
-        .map(([key, c]) => `<button class="chip" data-filter="${key}">${c.label}</button>`)
-        .join("");
-    }
-
-    // Reflejar búsqueda en el input del header
     const headerSearch = document.getElementById("searchInput");
     if (headerSearch && state.search) headerSearch.value = state.search;
 
-    // Marcar chip activo
-    function syncChips() {
-      document.querySelectorAll("#filters .chip").forEach((c) => {
-        c.classList.toggle("active", c.dataset.filter === state.filter);
+    const brands = [...new Set(PRODUCTS.map((p) => S.brandOf(p)))].sort();
+
+    function buildSidebar() {
+      if (!bar) return;
+      const catList = Object.entries(CATEGORIES)
+        .map(([k, c]) => `<li><a data-cat="${k}" class="${state.filter === k ? "active" : ""}">${c.icon} ${c.label}</a></li>`)
+        .join("");
+      const brandList = brands
+        .map((b) => `<label><input type="checkbox" data-brand="${b}" ${state.brands.has(b) ? "checked" : ""}> ${b}</label>`)
+        .join("");
+      bar.innerHTML = `
+        <div class="fbox">
+          <h4>Categorías</h4>
+          <ul class="fcats">${catList}</ul>
+        </div>
+        <div class="fbox">
+          <h4>Marcas</h4>
+          <div class="fbrands">${brandList}</div>
+        </div>
+        <div class="fbox">
+          <h4>Precio (CLP)</h4>
+          <div class="fprice">
+            <input type="number" class="input" id="pMin" placeholder="Mín" value="${state.priceMin ?? ""}">
+            <span>-</span>
+            <input type="number" class="input" id="pMax" placeholder="Máx" value="${state.priceMax ?? ""}">
+          </div>
+          <button class="btn btn--outline btn-sm" id="applyPrice" style="margin-top:8px; width:100%">Aplicar</button>
+        </div>
+        <div class="fbox">
+          <h4>Otros</h4>
+          <label class="ftoggle"><input type="checkbox" id="fFree" ${state.freeShipping ? "checked" : ""}> Envío gratis</label>
+          <label class="ftoggle" style="margin-top:6px"><input type="checkbox" id="fDisc" ${state.discountOnly ? "checked" : ""}> Con descuento</label>
+        </div>
+        <button class="btn btn--danger btn-clear" id="clearFilters">Limpiar filtros</button>`;
+
+      bar.querySelectorAll("[data-cat]").forEach((a) =>
+        a.addEventListener("click", () => { state.filter = a.dataset.cat; state.search = ""; buildSidebar(); render(); }));
+      bar.querySelectorAll("[data-brand]").forEach((c) =>
+        c.addEventListener("change", () => {
+          if (c.checked) state.brands.add(c.dataset.brand); else state.brands.delete(c.dataset.brand);
+          render();
+        }));
+      const applyP = bar.querySelector("#applyPrice");
+      if (applyP) applyP.addEventListener("click", () => {
+        const mn = parseInt(bar.querySelector("#pMin").value, 10);
+        const mx = parseInt(bar.querySelector("#pMax").value, 10);
+        state.priceMin = isNaN(mn) ? null : mn;
+        state.priceMax = isNaN(mx) ? null : mx;
+        render();
+      });
+      const ff = bar.querySelector("#fFree");
+      if (ff) ff.addEventListener("change", () => { state.freeShipping = ff.checked; render(); });
+      const fd = bar.querySelector("#fDisc");
+      if (fd) fd.addEventListener("change", () => { state.discountOnly = fd.checked; render(); });
+      const clr = bar.querySelector("#clearFilters");
+      if (clr) clr.addEventListener("click", () => {
+        state.filter = "all"; state.search = ""; state.brands.clear();
+        state.priceMin = state.priceMax = null; state.freeShipping = false; state.discountOnly = false;
+        buildSidebar(); render();
       });
     }
 
     function visible() {
       let list = PRODUCTS.filter((p) => {
-        const mf = state.filter === "all" || p.category === state.filter;
-        const ms = p.name.toLowerCase().includes(state.search.toLowerCase());
-        return mf && ms;
+        if (state.filter !== "all" && p.category !== state.filter) return false;
+        if (state.search && !p.name.toLowerCase().includes(state.search.toLowerCase())) return false;
+        if (state.brands.size && !state.brands.has(S.brandOf(p))) return false;
+        if (state.priceMin != null && p.price < state.priceMin) return false;
+        if (state.priceMax != null && p.price > state.priceMax) return false;
+        if (state.freeShipping && !p.freeShipping) return false;
+        if (state.discountOnly && discountPct(p) <= 0) return false;
+        return true;
       });
       if (state.sort === "price-asc") list.sort((a, b) => a.price - b.price);
       if (state.sort === "price-desc") list.sort((a, b) => b.price - a.price);
@@ -204,30 +261,17 @@
     function render() {
       const list = visible();
       if (emptyMsg) emptyMsg.hidden = list.length !== 0;
-      if (titleEl) {
-        titleEl.textContent = state.search
-          ? `Resultados para "${state.search}"`
-          : (CATEGORIES[state.filter] ? CATEGORIES[state.filter].label : "Todos los productos");
-      }
+      if (titleEl) titleEl.textContent = state.search
+        ? `Resultados para "${state.search}"`
+        : (CATEGORIES[state.filter] ? CATEGORIES[state.filter].label : "Todos los productos");
       if (countEl) countEl.textContent = `${list.length} resultado${list.length === 1 ? "" : "s"}`;
       grid.innerHTML = list.map(productCard).join("");
     }
 
-    const filtersEl = document.getElementById("filters");
-    if (filtersEl) {
-      filtersEl.addEventListener("click", (e) => {
-        const btn = e.target.closest(".chip");
-        if (!btn) return;
-        state.filter = btn.dataset.filter;
-        state.search = "";
-        syncChips();
-        render();
-      });
-    }
     const sort = document.getElementById("sortSelect");
     if (sort) sort.addEventListener("change", (e) => { state.sort = e.target.value; render(); });
 
-    syncChips();
+    buildSidebar();
     render();
   }
 

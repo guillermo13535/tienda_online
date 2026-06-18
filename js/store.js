@@ -52,6 +52,31 @@
     return `${p.installments}x ${money(cuota)} sin interés`;
   }
 
+  // Detecta la marca de un producto (campo brand, specs.Marca o por el nombre)
+  function brandOf(p) {
+    if (p.brand) return p.brand;
+    if (p.specs && p.specs["Marca"]) return p.specs["Marca"];
+    const n = (p.name || "").toLowerCase();
+    const map = [
+      ["iphone", "Apple"], ["macbook", "Apple"], ["apple", "Apple"],
+      ["galaxy", "Samsung"], ["samsung", "Samsung"],
+      ["redmi", "Xiaomi"], ["xiaomi", "Xiaomi"],
+      ["motorola", "Motorola"], ["moto ", "Motorola"],
+      ["pixel", "Google"], ["google", "Google"],
+      ["realme", "Realme"], ["honor", "Honor"],
+      ["jbl", "JBL"], ["bose", "Bose"],
+      ["playstation", "Sony"], ["sony", "Sony"],
+      ["xbox", "Xbox"], ["nintendo", "Nintendo"], ["switch", "Nintendo"],
+      ["steam deck", "Valve"],
+      ["lenovo", "Lenovo"], ["asus", "ASUS"], ["dell", "Dell"], ["hp ", "HP"],
+      ["hyperx", "HyperX"], ["razer", "Razer"], ["redragon", "Redragon"],
+      ["logitech", "Logitech"], ["cougar", "Cougar"],
+      ["lg ", "LG"], ["aoc", "AOC"], ["benq", "BenQ"], ["tp-link", "TP-Link"]
+    ];
+    for (const [k, b] of map) if (n.includes(k)) return b;
+    return "Otros";
+  }
+
   /* ---------- Carrito ---------- */
   function getCart() {
     try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; }
@@ -348,7 +373,7 @@
 
   /* ---------- API pública ---------- */
   window.Store = {
-    money, stars, findProduct, discountPct, installmentText,
+    money, stars, findProduct, discountPct, installmentText, brandOf,
     getCart, addToCart, setQty, changeQty, removeFromCart, clearCart,
     cartTotals, updateCartCount, showToast,
     saveProducts, resetProducts, decrementStock,

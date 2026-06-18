@@ -14,24 +14,26 @@
   <div data-include="header"></div>
 
   <main class="container block">
-    <div class="filters" id="filters"></div>
-
-    <div class="toolbar">
-      <div class="toolbar__info">
-        <h2 id="catalogTitle">Todos los productos</h2>
-        <p id="resultCount"></p>
+    <div class="catalog-layout">
+      <aside class="filters-bar" id="filtersBar"></aside>
+      <div>
+        <div class="toolbar">
+          <div class="toolbar__info">
+            <h2 id="catalogTitle">Todos los productos</h2>
+            <p id="resultCount"></p>
+          </div>
+          <select id="sortSelect" class="select" aria-label="Ordenar">
+            <option value="default">Más relevantes</option>
+            <option value="sold">Más vendidos</option>
+            <option value="price-asc">Menor precio</option>
+            <option value="price-desc">Mayor precio</option>
+            <option value="name">Nombre A-Z</option>
+          </select>
+        </div>
+        <div class="products" id="products"></div>
+        <p class="empty-msg" id="emptyMsg" hidden>No se encontraron productos 😕</p>
       </div>
-      <select id="sortSelect" class="select" aria-label="Ordenar">
-        <option value="default">Más relevantes</option>
-        <option value="sold">Más vendidos</option>
-        <option value="price-asc">Menor precio</option>
-        <option value="price-desc">Mayor precio</option>
-        <option value="name">Nombre A-Z</option>
-      </select>
     </div>
-
-    <div class="products" id="products"></div>
-    <p class="empty-msg" id="emptyMsg" hidden>No se encontraron productos 😕</p>
   </main>
 
   <div data-include="footer"></div>

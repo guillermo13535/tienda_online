@@ -295,6 +295,26 @@ section.block { padding: 40px 0; }
 .chip.active { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #07070f; border-color: transparent; }
 .empty-msg { text-align: center; color: var(--muted); padding: 50px 0; font-size: 1.15rem; }
 
+/* ===== Catálogo con barra de filtros ===== */
+.catalog-layout { display: grid; grid-template-columns: 250px 1fr; gap: 24px; align-items: start; }
+.filters-bar { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; position: sticky; top: 120px; }
+.fbox { border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 14px; }
+.fbox h4 { font-family: "Orbitron", sans-serif; font-size: .95rem; margin-bottom: 10px; }
+.fcats { list-style: none; display: grid; gap: 7px; }
+.fcats a { color: var(--muted); font-size: .92rem; cursor: pointer; }
+.fcats a:hover, .fcats a.active { color: var(--primary); font-weight: 700; }
+.fbrands { display: grid; gap: 8px; max-height: 220px; overflow-y: auto; }
+.fbrands label, .ftoggle { display: flex; gap: 8px; align-items: center; font-size: .9rem; cursor: pointer; }
+.fbrands input, .ftoggle input { accent-color: var(--primary); }
+.fprice { display: flex; gap: 6px; align-items: center; }
+.fprice .input { width: 100%; padding: 8px; }
+.btn-clear { width: 100%; }
+@media (max-width: 860px) {
+  .catalog-layout { grid-template-columns: 1fr; }
+  .filters-bar { position: static; }
+  .fbrands { max-height: 160px; }
+}
+
 /* =========================================================
    PÁGINA DE PRODUCTO (PDP) estilo Mercado Libre
    ========================================================= */
