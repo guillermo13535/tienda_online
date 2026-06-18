@@ -632,5 +632,729 @@
       "Pantalla": "Digital LED",
       "Garantía": "6 meses"
     }
+  },
+  {
+    "id": 25,
+    "name": "Google Pixel 8 128GB",
+    "category": "smartphones",
+    "price": 699990,
+    "oldPrice": 799990,
+    "installments": 12,
+    "freeShipping": true,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 320,
+    "stock": 16,
+    "rating": 5,
+    "image": "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=600&q=70"
+    ],
+    "description": "Google Pixel 8 con IA de Google, cámara excepcional y actualizaciones por 7 años.",
+    "specs": {
+      "Marca": "Google",
+      "Pantalla": "OLED 6.2\"",
+      "Almacenamiento": "128 GB",
+      "Cámara": "50 MP",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 26,
+    "name": "iPhone 14 128GB",
+    "category": "smartphones",
+    "price": 749990,
+    "oldPrice": 849990,
+    "installments": 12,
+    "freeShipping": true,
+    "full": false,
+    "condition": "Nuevo",
+    "sold": 880,
+    "stock": 22,
+    "rating": 5,
+    "image": "https://images.unsplash.com/photo-1678652197831-2d180705cd2c?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1678652197831-2d180705cd2c?w=600&q=70"
+    ],
+    "description": "iPhone 14 con chip A15 Bionic, pantalla OLED de 6.1\" y sistema de doble cámara avanzado.",
+    "specs": {
+      "Marca": "Apple",
+      "Pantalla": "OLED 6.1\"",
+      "Procesador": "A15 Bionic",
+      "Almacenamiento": "128 GB",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 27,
+    "name": "Samsung Galaxy A54 5G 256GB",
+    "category": "smartphones",
+    "price": 329990,
+    "oldPrice": 389990,
+    "installments": 12,
+    "freeShipping": true,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 1500,
+    "stock": 35,
+    "rating": 4,
+    "image": "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&q=70"
+    ],
+    "description": "Galaxy A54 5G con pantalla Super AMOLED 120Hz, cámara de 50 MP y batería de 5000 mAh.",
+    "specs": {
+      "Marca": "Samsung",
+      "Conectividad": "5G",
+      "Pantalla": "AMOLED 6.4\" 120Hz",
+      "Almacenamiento": "256 GB",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 28,
+    "name": "Realme C55 256GB",
+    "category": "smartphones",
+    "price": 159990,
+    "oldPrice": 199990,
+    "installments": 6,
+    "freeShipping": false,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 2400,
+    "stock": 60,
+    "rating": 4,
+    "image": "https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=600&q=70"
+    ],
+    "description": "Realme C55 con cámara de 64 MP, carga rápida de 33W y diseño premium.",
+    "specs": {
+      "Marca": "Realme",
+      "Pantalla": "LCD 6.72\" 90Hz",
+      "Cámara": "64 MP",
+      "Almacenamiento": "256 GB",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 29,
+    "name": "Notebook HP Pavilion 15 Core i5",
+    "category": "laptops",
+    "price": 549990,
+    "oldPrice": 649990,
+    "installments": 12,
+    "freeShipping": true,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 410,
+    "stock": 14,
+    "rating": 4,
+    "image": "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=600&q=70"
+    ],
+    "description": "Notebook HP Pavilion con Intel Core i5, 16 GB RAM, SSD 512 GB y pantalla Full HD.",
+    "specs": {
+      "Marca": "HP",
+      "Procesador": "Intel Core i5",
+      "RAM": "16 GB",
+      "Almacenamiento": "SSD 512 GB",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 30,
+    "name": "Notebook Dell Inspiron 15",
+    "category": "laptops",
+    "price": 499990,
+    "oldPrice": 599990,
+    "installments": 12,
+    "freeShipping": true,
+    "full": false,
+    "condition": "Nuevo",
+    "sold": 360,
+    "stock": 11,
+    "rating": 4,
+    "image": "https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?w=600&q=70"
+    ],
+    "description": "Dell Inspiron 15 con Ryzen 5, 8 GB RAM y SSD de 512 GB, ideal para estudio y trabajo.",
+    "specs": {
+      "Marca": "Dell",
+      "Procesador": "AMD Ryzen 5",
+      "RAM": "8 GB",
+      "Almacenamiento": "SSD 512 GB",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 31,
+    "name": "Notebook Gamer Lenovo Legion 5 RTX 4070",
+    "category": "laptops",
+    "price": 1499990,
+    "oldPrice": 1699990,
+    "installments": 12,
+    "freeShipping": true,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 90,
+    "stock": 5,
+    "rating": 5,
+    "image": "https://images.unsplash.com/photo-1591488320449-011701bb6704?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1591488320449-011701bb6704?w=600&q=70"
+    ],
+    "description": "Lenovo Legion 5 con Ryzen 7, RTX 4070, 16 GB RAM y pantalla 165Hz para gaming exigente.",
+    "specs": {
+      "Marca": "Lenovo",
+      "Procesador": "AMD Ryzen 7",
+      "Gráfica": "RTX 4070",
+      "RAM": "16 GB",
+      "Pantalla": "15.6\" 165Hz",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 32,
+    "name": "Apple MacBook Pro 14\" M3",
+    "category": "laptops",
+    "price": 1899990,
+    "oldPrice": 2099990,
+    "installments": 12,
+    "freeShipping": true,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 140,
+    "stock": 7,
+    "rating": 5,
+    "image": "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=600&q=70"
+    ],
+    "description": "MacBook Pro 14\" con chip M3, pantalla Liquid Retina XDR y rendimiento profesional.",
+    "specs": {
+      "Marca": "Apple",
+      "Procesador": "Chip M3",
+      "RAM": "16 GB",
+      "Almacenamiento": "512 GB",
+      "Pantalla": "14\" Liquid Retina XDR",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 33,
+    "name": "Teclado Mecánico HyperX Alloy Origins",
+    "category": "gamer",
+    "price": 79990,
+    "oldPrice": 99990,
+    "installments": 6,
+    "freeShipping": false,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 640,
+    "stock": 40,
+    "rating": 5,
+    "image": "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=600&q=70"
+    ],
+    "description": "Teclado mecánico HyperX Alloy Origins con switches propios, RGB y estructura de aluminio.",
+    "specs": {
+      "Marca": "HyperX",
+      "Tipo": "Mecánico full-size",
+      "Switch": "HyperX Red",
+      "Iluminación": "RGB",
+      "Garantía": "2 años"
+    }
+  },
+  {
+    "id": 34,
+    "name": "Mouse Gamer Razer DeathAdder V3",
+    "category": "gamer",
+    "price": 49990,
+    "oldPrice": 69990,
+    "installments": 6,
+    "freeShipping": false,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 980,
+    "stock": 55,
+    "rating": 5,
+    "image": "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=600&q=70"
+    ],
+    "description": "Mouse gamer Razer DeathAdder V3 con sensor de 30000 DPI y diseño ergonómico ultraligero.",
+    "specs": {
+      "Marca": "Razer",
+      "Sensor": "30000 DPI",
+      "Peso": "59 g",
+      "Botones": "5 programables",
+      "Garantía": "2 años"
+    }
+  },
+  {
+    "id": 35,
+    "name": "Audífonos Gamer HyperX Cloud II",
+    "category": "gamer",
+    "price": 69990,
+    "oldPrice": 89990,
+    "installments": 6,
+    "freeShipping": true,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 1700,
+    "stock": 48,
+    "rating": 5,
+    "image": "https://images.unsplash.com/photo-1599669454699-248893623440?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1599669454699-248893623440?w=600&q=70"
+    ],
+    "description": "Audífonos HyperX Cloud II con sonido envolvente 7.1, micrófono con cancelación de ruido.",
+    "specs": {
+      "Marca": "HyperX",
+      "Sonido": "Virtual 7.1",
+      "Micrófono": "Desmontable",
+      "Conexión": "USB / 3.5 mm",
+      "Garantía": "2 años"
+    }
+  },
+  {
+    "id": 36,
+    "name": "Control Inalámbrico Xbox Series",
+    "category": "gamer",
+    "price": 54990,
+    "oldPrice": 64990,
+    "installments": 6,
+    "freeShipping": false,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 1300,
+    "stock": 70,
+    "rating": 5,
+    "image": "https://images.unsplash.com/photo-1592840496694-26d035b52b48?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1592840496694-26d035b52b48?w=600&q=70"
+    ],
+    "description": "Control inalámbrico Xbox Series compatible con consola y PC, con gatillos texturizados.",
+    "specs": {
+      "Marca": "Microsoft",
+      "Conexión": "Bluetooth / USB-C",
+      "Compatibilidad": "Xbox / PC",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 37,
+    "name": "Mousepad Gamer Razer Goliathus XXL",
+    "category": "gamer",
+    "price": 19990,
+    "oldPrice": 29990,
+    "installments": 3,
+    "freeShipping": false,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 2200,
+    "stock": 120,
+    "rating": 4,
+    "image": "https://images.unsplash.com/photo-1629429407759-01cd3d7cfb38?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1629429407759-01cd3d7cfb38?w=600&q=70"
+    ],
+    "description": "Mousepad extra grande Razer Goliathus con superficie optimizada e iluminación RGB.",
+    "specs": {
+      "Marca": "Razer",
+      "Tamaño": "XXL (920x294 mm)",
+      "Superficie": "Tela",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 38,
+    "name": "Webcam Logitech C920 Full HD",
+    "category": "gamer",
+    "price": 44990,
+    "oldPrice": 59990,
+    "installments": 6,
+    "freeShipping": false,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 870,
+    "stock": 33,
+    "rating": 5,
+    "image": "https://images.unsplash.com/photo-1587826080692-f439cd0b70da?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1587826080692-f439cd0b70da?w=600&q=70"
+    ],
+    "description": "Webcam Logitech C920 con video Full HD 1080p, ideal para streaming y videollamadas.",
+    "specs": {
+      "Marca": "Logitech",
+      "Resolución": "1080p 30fps",
+      "Micrófono": "Estéreo",
+      "Conexión": "USB",
+      "Garantía": "2 años"
+    }
+  },
+  {
+    "id": 39,
+    "name": "Volante Logitech G29 Racing",
+    "category": "gamer",
+    "price": 299990,
+    "oldPrice": 349990,
+    "installments": 12,
+    "freeShipping": true,
+    "full": false,
+    "condition": "Nuevo",
+    "sold": 120,
+    "stock": 6,
+    "rating": 5,
+    "image": "https://images.unsplash.com/photo-1547394765-185e1e68f34e?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1547394765-185e1e68f34e?w=600&q=70"
+    ],
+    "description": "Volante Logitech G29 con pedales, force feedback y compatibilidad PS5/PS4/PC.",
+    "specs": {
+      "Marca": "Logitech",
+      "Incluye": "Pedales",
+      "Compatibilidad": "PS5/PS4/PC",
+      "Garantía": "2 años"
+    }
+  },
+  {
+    "id": 40,
+    "name": "Apple AirPods Pro 2",
+    "category": "audio",
+    "price": 199990,
+    "oldPrice": 249990,
+    "installments": 12,
+    "freeShipping": true,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 1900,
+    "stock": 40,
+    "rating": 5,
+    "image": "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=600&q=70"
+    ],
+    "description": "AirPods Pro 2 con cancelación activa de ruido mejorada, audio espacial y estuche MagSafe.",
+    "specs": {
+      "Marca": "Apple",
+      "Cancelación de ruido": "Activa",
+      "Audio espacial": "Sí",
+      "Batería": "6 h (30 h con estuche)",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 41,
+    "name": "Parlante Bose SoundLink Flex",
+    "category": "audio",
+    "price": 149990,
+    "oldPrice": 189990,
+    "installments": 12,
+    "freeShipping": true,
+    "full": false,
+    "condition": "Nuevo",
+    "sold": 330,
+    "stock": 20,
+    "rating": 5,
+    "image": "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&q=70"
+    ],
+    "description": "Parlante portátil Bose SoundLink Flex resistente al agua con sonido potente y claro.",
+    "specs": {
+      "Marca": "Bose",
+      "Resistencia": "IP67",
+      "Batería": "12 horas",
+      "Conexión": "Bluetooth",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 42,
+    "name": "Audífonos JBL Tune 520BT",
+    "category": "audio",
+    "price": 39990,
+    "oldPrice": 54990,
+    "installments": 3,
+    "freeShipping": false,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 1450,
+    "stock": 65,
+    "rating": 4,
+    "image": "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=600&q=70"
+    ],
+    "description": "Audífonos JBL Tune 520BT inalámbricos con JBL Pure Bass y hasta 57 horas de batería.",
+    "specs": {
+      "Marca": "JBL",
+      "Tipo": "On-ear inalámbrico",
+      "Batería": "57 horas",
+      "Conexión": "Bluetooth 5.3",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 43,
+    "name": "Monitor AOC 27\" 75Hz IPS",
+    "category": "monitores",
+    "price": 119990,
+    "oldPrice": 149990,
+    "installments": 9,
+    "freeShipping": true,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 540,
+    "stock": 19,
+    "rating": 4,
+    "image": "https://images.unsplash.com/photo-1551645120-d70bfe84c826?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1551645120-d70bfe84c826?w=600&q=70"
+    ],
+    "description": "Monitor AOC de 27\" panel IPS, Full HD y 75Hz, con bordes ultrafinos.",
+    "specs": {
+      "Marca": "AOC",
+      "Tamaño": "27\"",
+      "Resolución": "1920x1080",
+      "Refresco": "75Hz",
+      "Panel": "IPS",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 44,
+    "name": "Monitor ASUS ProArt 27\" 4K",
+    "category": "monitores",
+    "price": 399990,
+    "oldPrice": 479990,
+    "installments": 12,
+    "freeShipping": true,
+    "full": false,
+    "condition": "Nuevo",
+    "sold": 95,
+    "stock": 6,
+    "rating": 5,
+    "image": "https://images.unsplash.com/photo-1616763355548-1b606f439f86?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1616763355548-1b606f439f86?w=600&q=70"
+    ],
+    "description": "Monitor ASUS ProArt 27\" 4K UHD con calibración de fábrica, ideal para diseño y edición.",
+    "specs": {
+      "Marca": "ASUS",
+      "Tamaño": "27\"",
+      "Resolución": "3840x2160 4K",
+      "Panel": "IPS",
+      "Color": "100% sRGB",
+      "Garantía": "2 años"
+    }
+  },
+  {
+    "id": 45,
+    "name": "Consola Steam Deck 512GB OLED",
+    "category": "consolas",
+    "price": 599990,
+    "oldPrice": 699990,
+    "installments": 12,
+    "freeShipping": true,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 70,
+    "stock": 4,
+    "rating": 5,
+    "image": "https://images.unsplash.com/photo-1662219708489-dd0f0c6e0f3c?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1662219708489-dd0f0c6e0f3c?w=600&q=70"
+    ],
+    "description": "Steam Deck OLED con 512 GB, pantalla HDR y acceso a tu biblioteca de Steam donde quieras.",
+    "specs": {
+      "Marca": "Valve",
+      "Pantalla": "OLED 7.4\"",
+      "Almacenamiento": "512 GB",
+      "Sistema": "SteamOS",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 46,
+    "name": "Consola PlayStation 5 Digital Edition",
+    "category": "consolas",
+    "price": 499990,
+    "oldPrice": 559990,
+    "installments": 12,
+    "freeShipping": true,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 540,
+    "stock": 9,
+    "rating": 5,
+    "image": "https://images.unsplash.com/photo-1607853202273-797f1c22a38e?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1607853202273-797f1c22a38e?w=600&q=70"
+    ],
+    "description": "PlayStation 5 Digital Edition, totalmente digital, con SSD ultrarrápido y mando DualSense.",
+    "specs": {
+      "Marca": "Sony",
+      "Tipo": "Digital",
+      "Almacenamiento": "1 TB SSD",
+      "Resolución": "Hasta 4K",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 47,
+    "name": "SSD Externo Samsung T7 1TB",
+    "category": "accesorios",
+    "price": 89990,
+    "oldPrice": 119990,
+    "installments": 6,
+    "freeShipping": false,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 1100,
+    "stock": 80,
+    "rating": 5,
+    "image": "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=600&q=70"
+    ],
+    "description": "SSD externo portátil Samsung T7 de 1 TB con velocidades de hasta 1050 MB/s.",
+    "specs": {
+      "Marca": "Samsung",
+      "Capacidad": "1 TB",
+      "Velocidad": "1050 MB/s",
+      "Conexión": "USB-C 3.2",
+      "Garantía": "3 años"
+    }
+  },
+  {
+    "id": 48,
+    "name": "Smartwatch Samsung Galaxy Watch 6",
+    "category": "accesorios",
+    "price": 249990,
+    "oldPrice": 299990,
+    "installments": 12,
+    "freeShipping": true,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 380,
+    "stock": 26,
+    "rating": 4,
+    "image": "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&q=70"
+    ],
+    "description": "Galaxy Watch 6 con monitoreo de salud avanzado, GPS y pantalla AMOLED.",
+    "specs": {
+      "Marca": "Samsung",
+      "Pantalla": "AMOLED",
+      "Salud": "Ritmo cardíaco, sueño, SpO2",
+      "GPS": "Sí",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 49,
+    "name": "Router WiFi 6 TP-Link AX1500",
+    "category": "accesorios",
+    "price": 49990,
+    "oldPrice": 69990,
+    "installments": 6,
+    "freeShipping": false,
+    "full": false,
+    "condition": "Nuevo",
+    "sold": 720,
+    "stock": 50,
+    "rating": 4,
+    "image": "https://images.unsplash.com/photo-1606904825846-647eb07f5be2?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1606904825846-647eb07f5be2?w=600&q=70"
+    ],
+    "description": "Router TP-Link con WiFi 6, mayor velocidad y cobertura para toda la casa.",
+    "specs": {
+      "Marca": "TP-Link",
+      "Estándar": "WiFi 6 (AX1500)",
+      "Bandas": "Doble banda",
+      "Puertos": "4x Gigabit",
+      "Garantía": "2 años"
+    }
+  },
+  {
+    "id": 50,
+    "name": "Disco Duro Externo 2TB USB 3.0",
+    "category": "accesorios",
+    "price": 64990,
+    "oldPrice": 84990,
+    "installments": 6,
+    "freeShipping": false,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 1600,
+    "stock": 90,
+    "rating": 4,
+    "image": "https://images.unsplash.com/photo-1531492746076-161ca9bcad58?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1531492746076-161ca9bcad58?w=600&q=70"
+    ],
+    "description": "Disco duro externo portátil de 2 TB con conexión USB 3.0, ideal para respaldos.",
+    "specs": {
+      "Capacidad": "2 TB",
+      "Conexión": "USB 3.0",
+      "Formato": "2.5\"",
+      "Garantía": "2 años"
+    }
+  },
+  {
+    "id": 51,
+    "name": "Memoria USB 128GB USB 3.2",
+    "category": "accesorios",
+    "price": 12990,
+    "oldPrice": 17990,
+    "installments": 3,
+    "freeShipping": false,
+    "full": false,
+    "condition": "Nuevo",
+    "sold": 3200,
+    "stock": 200,
+    "rating": 4,
+    "image": "https://images.unsplash.com/photo-1618410320928-25228d811631?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1618410320928-25228d811631?w=600&q=70"
+    ],
+    "description": "Pendrive de 128 GB con interfaz USB 3.2 para transferencias rápidas.",
+    "specs": {
+      "Capacidad": "128 GB",
+      "Conexión": "USB 3.2",
+      "Garantía": "1 año"
+    }
+  },
+  {
+    "id": 52,
+    "name": "Hub USB-C 7 en 1",
+    "category": "accesorios",
+    "price": 29990,
+    "oldPrice": 39990,
+    "installments": 3,
+    "freeShipping": false,
+    "full": true,
+    "condition": "Nuevo",
+    "sold": 950,
+    "stock": 110,
+    "rating": 4,
+    "image": "https://images.unsplash.com/photo-1625842268584-8f3296236761?w=600&q=70",
+    "gallery": [
+      "https://images.unsplash.com/photo-1625842268584-8f3296236761?w=600&q=70"
+    ],
+    "description": "Adaptador Hub USB-C 7 en 1 con HDMI 4K, USB 3.0, lector SD y carga PD.",
+    "specs": {
+      "Puertos": "HDMI, 3x USB, SD/microSD, USB-C PD",
+      "Resolución HDMI": "4K",
+      "Garantía": "1 año"
+    }
   }
 ]
