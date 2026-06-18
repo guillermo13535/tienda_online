@@ -67,7 +67,7 @@
   <script src="js/store.js"></script>
   <script src="js/google-auth.js"></script>
   <script>
-    document.getElementById("registroForm").addEventListener("submit", function (e) {
+    document.getElementById("registroForm").addEventListener("submit", async function (e) {
       e.preventDefault();
       const v = (id) => document.getElementById(id).value.trim();
       const setErr = (id, msg) => (document.getElementById(id).textContent = msg);
@@ -86,7 +86,7 @@
       if (v("password") !== v("password2")) { setErr("errPass2", "Las contraseñas no coinciden."); ok = false; }
 
       if (ok) {
-        const res = window.Store.Auth.register({
+        const res = await window.Store.Auth.register({
           nombre: v("nombre"), apellido: v("apellido"),
           email: v("email"), password: v("password")
         });

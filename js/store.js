@@ -38,6 +38,43 @@
   }
   loadProducts();
 
+  /* ---------- Capa de API REST (con respaldo a localStorage) ---------- */
+  const TOKEN_KEY = "tecnoshop_token";
+  function getToken() { return localStorage.getItem(TOKEN_KEY) || ""; }
+  let apiOnline = false;
+
+  async function api(path, { method = "GET", body } = {}) {
+    const headers = { "Content-Type": "application/json" };
+    const tk = getToken();
+    if (tk) headers.Authorization = "Bearer " + tk;
+    const res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      const e = new Error((data && data.error) || ("HTTP " + res.status));
+      e.status = res.status; e.data = data;
+      throw e;
+    }
+    return data;
+  }
+
+  // Trae el catálogo desde la API; si el backend no está, usa el local
+  async function syncProducts() {
+    try {
+      const list = await api("/api/products");
+      if (Array.isArray(list) && list.length) {
+        PRODUCTS.length = 0;
+        list.forEach((p) => PRODUCTS.push(p));
+        saveProducts();
+        apiOnline = true;
+        document.dispatchEvent(new CustomEvent("tecnoshop:products"));
+      }
+    } catch (_) {
+      apiOnline = false; // backend no disponible -> seguimos con datos locales
+    }
+    return apiOnline;
+  }
+  function isApiOnline() { return apiOnline; }
+
   /* ---------- Helpers de formato ---------- */
   const money = (n) => "$" + Number(n).toLocaleString("es-CL");
   function findProduct(id) { return PRODUCTS.find((p) => p.id === Number(id)); }
@@ -164,24 +201,44 @@
     }
   }
   const Auth = {
-    register({ nombre, apellido, email, password }) {
+    async register({ nombre, apellido, email, password }) {
       email = email.trim().toLowerCase();
-      const users = getUsers();
-      if (users.some((u) => u.email === email)) {
-        return { ok: false, error: "Ya existe una cuenta con ese correo." };
+      // 1) Intentar vía API (backend)
+      try {
+        await api("/api/auth/register", { method: "POST", body: { nombre, apellido, email, password } });
+        return { ok: true, via: "api" };
+      } catch (e) {
+        if (e.status === 409) return { ok: false, error: "Ya existe una cuenta con ese correo." };
+        if (e.status) return { ok: false, error: e.message };
+        // sin backend -> respaldo local
       }
+      // 2) Respaldo local
+      const users = getUsers();
+      if (users.some((u) => u.email === email)) return { ok: false, error: "Ya existe una cuenta con ese correo." };
       users.push({ nombre, apellido, email, password, role: "cliente" });
       saveUsers(users);
-      return { ok: true };
+      return { ok: true, via: "local" };
     },
-    login(email, password) {
+    async login(email, password) {
       email = email.trim().toLowerCase();
+      // 1) Intentar vía API
+      try {
+        const d = await api("/api/auth/login", { method: "POST", body: { email, password } });
+        localStorage.setItem(TOKEN_KEY, d.token);
+        localStorage.setItem(SESSION_KEY, JSON.stringify(d.user));
+        return { ok: true, user: d.user, via: "api" };
+      } catch (e) {
+        if (e.status === 401) return { ok: false, error: "Correo o contraseña incorrectos." };
+        if (e.status) return { ok: false, error: e.message };
+        // sin backend -> respaldo local
+      }
+      // 2) Respaldo local
       const user = getUsers().find((u) => u.email === email && u.password === password);
       if (!user) return { ok: false, error: "Correo o contraseña incorrectos." };
       localStorage.setItem(SESSION_KEY, JSON.stringify({ email: user.email, nombre: user.nombre, role: user.role }));
       return { ok: true, user };
     },
-    // Inicio de sesión con un perfil externo (Google)
+    // Inicio de sesión con un perfil externo (Google) - local
     loginWithProfile({ nombre, apellido, email }) {
       email = (email || "").trim().toLowerCase();
       const users = getUsers();
@@ -194,7 +251,7 @@
       localStorage.setItem(SESSION_KEY, JSON.stringify({ email: user.email, nombre: user.nombre, role: user.role }));
       return user;
     },
-    logout() { localStorage.removeItem(SESSION_KEY); },
+    logout() { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(TOKEN_KEY); },
     current() {
       try { return JSON.parse(localStorage.getItem(SESSION_KEY)); }
       catch { return null; }
@@ -213,7 +270,13 @@
       if (!u) return [];
       if (u.role === "admin") return list;
       return list.filter((o) => o.email === u.email);
-    }
+    },
+    // API: crear pedido (el servidor valida stock y total)
+    createRemote(items, metodo) {
+      return api("/api/orders", { method: "POST", body: { items, metodo } });
+    },
+    // API: listar pedidos del usuario (o todos si es admin)
+    listRemote() { return api("/api/orders"); }
   };
 
   /* ---------- Toast ---------- */
@@ -420,6 +483,7 @@
     getCart, addToCart, setQty, changeQty, removeFromCart, clearCart,
     cartTotals, updateCartCount, showToast,
     saveProducts, resetProducts, decrementStock,
+    api, syncProducts, isApiOnline,
     Auth, Orders
   };
 
@@ -567,6 +631,9 @@
     renderChrome();
     updateCartCount();
     initAssistant();
+
+    // Conectar con el backend: traer el catálogo desde la API (si está disponible)
+    syncProducts();
 
     // Mostrar bienvenida con el logo si se acaba de iniciar sesión
     const welcome = localStorage.getItem("tecnoshop_welcome");

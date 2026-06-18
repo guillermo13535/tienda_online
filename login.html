@@ -50,7 +50,7 @@
   <script src="js/store.js"></script>
   <script src="js/google-auth.js"></script>
   <script>
-    document.getElementById("loginForm").addEventListener("submit", function (e) {
+    document.getElementById("loginForm").addEventListener("submit", async function (e) {
       e.preventDefault();
       const email = document.getElementById("email");
       const pass = document.getElementById("password");
@@ -70,7 +70,7 @@
       } else { errPass.textContent = ""; }
 
       if (ok) {
-        const res = window.Store.Auth.login(email.value, pass.value);
+        const res = await window.Store.Auth.login(email.value, pass.value);
         if (!res.ok) { errPass.textContent = res.error; return; }
         localStorage.setItem("tecnoshop_welcome", res.user.nombre);
         const dest = res.user.role === "admin" ? "admin.html" : "index.html";

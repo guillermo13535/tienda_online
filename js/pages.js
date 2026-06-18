@@ -116,7 +116,7 @@
     </div>
     <div class="b-body">
       <div class="b-meta">
-        <div><strong>Cliente:</strong> ${order.cliente || "Cliente"}<br><strong>Correo:</strong> ${order.correo || "-"}</div>
+        <div><strong>Cliente:</strong> ${order.cliente || "Cliente"}<br><strong>Correo:</strong> ${order.correo || order.email || "-"}</div>
         <div style="text-align:right"><strong>Fecha:</strong> ${fecha}<br><strong>Medio de pago:</strong> ${order.metodo}</div>
       </div>
       <table>
@@ -711,35 +711,44 @@
       return ok;
     }
 
-    function finalizar(metodoLabel) {
+    async function finalizar(metodoLabel) {
       if (finalizando) return;       // evita pago doble
       finalizando = true;
       localStorage.setItem("tecnoshop_lastpurchase", Date.now()); // inicia la espera de 10s
-      const orden = "TS-" + Date.now().toString().slice(-8);
       const user = S.Auth.current();
       const emailField = document.getElementById("buyerEmail");
       const correo = (emailField && emailField.value.trim()) || (user && user.email) || "";
       const cartSnapshot = getCart();
-      const items = cartSnapshot.map((i) => {
-        const p = findProduct(i.id);
-        return { id: i.id, nombre: p ? p.name : "", qty: i.qty, price: p ? p.price : 0 };
-      });
 
-      const order = {
-        id: orden, email: correo || (user ? user.email : "invitado"), correo,
-        cliente: user ? user.nombre : "Cliente",
-        items, total, metodo: metodoLabel, fecha: new Date().toISOString()
-      };
+      let order = null;
+      // 1) Intentar crear el pedido en el backend (valida stock y total en el servidor)
+      try {
+        const remote = await S.Orders.createRemote(cartSnapshot.map((i) => ({ id: i.id, qty: i.qty })), metodoLabel);
+        order = { ...remote, correo };
+        await S.syncProducts(); // refrescar el stock real desde el servidor
+      } catch (e) {
+        // 2) Respaldo local (sin backend)
+        const items = cartSnapshot.map((i) => {
+          const p = findProduct(i.id);
+          return { id: i.id, nombre: p ? p.name : "", qty: i.qty, price: p ? p.price : 0 };
+        });
+        order = {
+          id: "TS-" + Date.now().toString().slice(-8),
+          email: correo || (user ? user.email : "invitado"), correo,
+          cliente: user ? user.nombre : "Cliente",
+          items, total, metodo: metodoLabel, fecha: new Date().toISOString()
+        };
+        S.Orders.add(order);
+        S.decrementStock(cartSnapshot);
+      }
 
-      // Guardar el pedido (historial "Mis pedidos")
-      S.Orders.add(order);
-      // Descontar el stock comprado
-      S.decrementStock(cartSnapshot);
+      const ordenId = order.id;
+      const totalFinal = order.total != null ? order.total : total;
 
       // Webhook: notificar la compra a un sistema externo (POST)
       if (window.Integrations) {
         window.Integrations.sendWebhook("https://jsonplaceholder.typicode.com/posts", {
-          evento: "compra_realizada", orden, metodo: metodoLabel, total, items, fecha: order.fecha
+          evento: "compra_realizada", orden: ordenId, metodo: metodoLabel, total: totalFinal, items: order.items, fecha: order.fecha
         }).then((r) => console.log("Webhook enviado, HTTP", r.status))
           .catch((e) => console.warn("Webhook falló:", e.message));
       }
@@ -753,9 +762,9 @@
           <h2>¡Compra realizada con éxito!</h2>
           <p>Gracias por tu compra en TecnoShop.</p>
           <div class="checkout-success__box">
-            <p><span>N° de boleta</span><strong>${orden}</strong></p>
+            <p><span>N° de boleta</span><strong>${ordenId}</strong></p>
             <p><span>Medio de pago</span><strong>${metodoLabel}</strong></p>
-            <p><span>Total pagado</span><strong>${money(total)}</strong></p>
+            <p><span>Total pagado</span><strong>${money(totalFinal)}</strong></p>
           </div>
           <p class="email-status" id="emailStatus">📧 Preparando el envío de tu boleta...</p>
           <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:18px">
@@ -768,7 +777,7 @@
       S.clearCart();
 
       // Botón de descarga/impresión de la boleta
-      document.getElementById("btnBoleta").addEventListener("click", () => descargarBoleta(boletaHtml, orden));
+      document.getElementById("btnBoleta").addEventListener("click", () => descargarBoleta(boletaHtml, ordenId));
 
       // Envío de la boleta por correo (EmailJS)
       const status = document.getElementById("emailStatus");
@@ -777,11 +786,11 @@
         status.innerHTML = "🧾 Tu boleta está lista para descargar.";
       } else if (I && I.emailConfigured && I.emailConfigured()) {
         status.textContent = `📤 Enviando boleta a ${correo}...`;
-        const resumen = items.map((it) => `${it.qty} x ${it.nombre} — ${money(it.price * it.qty)}`).join("\n");
+        const resumen = order.items.map((it) => `${it.qty} x ${it.nombre} — ${money(it.price * it.qty)}`).join("\n");
         I.sendBoletaEmail({
-          to_email: correo, cliente: order.cliente, orden,
+          to_email: correo, cliente: order.cliente || (user ? user.nombre : "Cliente"), orden: ordenId,
           fecha: new Date(order.fecha).toLocaleString("es-CL"),
-          metodo: metodoLabel, total: money(total), detalle: resumen
+          metodo: metodoLabel, total: money(totalFinal), detalle: resumen
         }).then(() => { status.innerHTML = `✅ Boleta enviada a <strong>${correo}</strong>`; })
           .catch(() => { status.innerHTML = `🧾 No se pudo enviar el correo. Descarga tu boleta con el botón.`; });
       } else {
@@ -858,7 +867,7 @@
   }
 
   /* ---------- Página: Mis pedidos ---------- */
-  function initPedidos() {
+  async function initPedidos() {
     const wrap = document.getElementById("pedidosContent");
     if (!wrap) return;
     const user = S.Auth.current();
@@ -868,7 +877,10 @@
         <a class="btn btn--primary" href="login.html" style="margin-top:14px">Iniciar sesión</a></div>`;
       return;
     }
-    const orders = S.Orders.forCurrent();
+    wrap.innerHTML = `<p class="muted">Cargando tus pedidos...</p>`;
+    let orders = [];
+    try { orders = await S.Orders.listRemote(); }   // API (backend)
+    catch (_) { orders = S.Orders.forCurrent(); }    // respaldo local
     if (!orders.length) {
       wrap.innerHTML = `<div class="cart-empty"><p style="font-size:3rem">📦</p>
         <p>Aún no tienes pedidos.</p>
@@ -1063,12 +1075,19 @@
   /* ---------- Bootstrap por página ---------- */
   document.addEventListener("DOMContentLoaded", function () {
     const page = document.body.dataset.page;
-    if (page === "home") initHome();
-    if (page === "productos") initCatalog();
-    if (page === "producto") initDetail();
-    if (page === "carrito") initCart();
-    if (page === "checkout") initCheckout();
-    if (page === "pedidos") initPedidos();
-    if (page === "admin") initAdmin();
+    function run() {
+      if (page === "home") initHome();
+      if (page === "productos") initCatalog();
+      if (page === "producto") initDetail();
+      if (page === "carrito") initCart();
+      if (page === "checkout") initCheckout();
+      if (page === "pedidos") initPedidos();
+      if (page === "admin") initAdmin();
+    }
+    run();
+    // Cuando el catálogo llega desde la API, re-renderizar las páginas que lo muestran
+    document.addEventListener("tecnoshop:products", () => {
+      if (["home", "productos", "producto"].includes(page)) run();
+    });
   });
 })();
