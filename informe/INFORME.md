@@ -245,7 +245,51 @@ async function api(path, { method = "GET", body } = {}) {
 ---
 
 ## 5. Evidencias
-Las evidencias técnicas (JSON, logs y verificación de módulos) están en las secciones 3 y 4. Capturas de pantalla a incluir:
+
+La evidencia técnica respalda cada prueba realizada, en distintos formatos:
+
+### 5.1 Evidencia de pruebas automatizadas (runner nativo de Node)
+Se implementó una suite de **7 pruebas automatizadas** sobre la API (`backend/test.js`), ejecutada con `node test.js`. Resultado real obtenido:
+
+```
+TAP version 13
+ok 1 - CP-A1: GET /api/products devuelve el catálogo
+ok 2 - CP-A2: POST /api/auth/register crea un usuario
+ok 3 - CP-A3: POST /api/auth/login (admin) devuelve token
+ok 4 - CP-A4: login con clave incorrecta es rechazado (401)
+ok 5 - CP-A5: POST /api/orders crea pedido y descuenta stock
+ok 6 - CP-A6: un cliente NO puede crear productos (403)
+ok 7 - CP-A7: pedido sin sesión es rechazado (401)
+1..7
+# tests 7
+# pass 7
+# fail 0
+# duration_ms 455.75
+```
+
+### 5.2 Evidencia tipo Postman / respuestas JSON
+Se incluye la colección **`informe/TecnoShop.postman_collection.json`** (importable en Postman) con las peticiones de la API. Respuestas JSON reales obtenidas:
+
+```json
+// POST /api/auth/login
+{ "token": "eyJhbGciOiJIUzI1NiIs...", "user": { "id": 1, "nombre": "Administrador", "role": "admin" } }
+
+// POST /api/orders
+{ "id": "TS-57471869", "userId": 1, "total": 104970, "metodo": "Tarjeta",
+  "items": [ { "id": 14, "nombre": "Teclado Mecánico Redragon Kumara RGB", "qty": 2, "price": 34990 } ] }
+
+// POST /api/auth/login (credenciales inválidas)
+{ "error": "Correo o contraseña incorrectos" }   // HTTP 401
+```
+
+### 5.3 Logs del servidor
+```
+👤 Admin creado: admin@tecnoshop.cl / admin123
+🚀 TecnoShop API + sitio en http://localhost:3000
+   API REST disponible en http://localhost:3000/api
+```
+
+### 5.4 Capturas de pantalla a incluir
 1. Pantalla de inicio de sesión (con botón de Google).
 2. Pantalla de bienvenida con el logo.
 3. Catálogo con la barra de filtros (marca / precio).
@@ -254,6 +298,7 @@ Las evidencias técnicas (JSON, logs y verificación de módulos) están en las 
 6. Boleta generada de la compra.
 7. Panel de administración (CRUD de productos).
 8. Asistente virtual TecnoBot recomendando productos.
+9. Postman ejecutando las peticiones de la colección.
 
 ---
 
