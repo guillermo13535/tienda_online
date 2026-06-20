@@ -203,21 +203,24 @@
   const Auth = {
     async register({ nombre, apellido, email, password }) {
       email = email.trim().toLowerCase();
+      let apiOk = false;
       // 1) Intentar vía API (backend)
       try {
         await api("/api/auth/register", { method: "POST", body: { nombre, apellido, email, password } });
-        return { ok: true, via: "api" };
+        apiOk = true;
       } catch (e) {
         if (e.status === 409) return { ok: false, error: "Ya existe una cuenta con ese correo." };
-        if (e.status) return { ok: false, error: e.message };
-        // sin backend -> respaldo local
+        // 404 / 500 / sin backend -> seguimos con registro local
       }
-      // 2) Respaldo local
+      // 2) Guardar copia local (así puede iniciar sesión con o sin backend)
       const users = getUsers();
-      if (users.some((u) => u.email === email)) return { ok: false, error: "Ya existe una cuenta con ese correo." };
-      users.push({ nombre, apellido, email, password, role: "cliente" });
-      saveUsers(users);
-      return { ok: true, via: "local" };
+      const existeLocal = users.some((u) => u.email === email);
+      if (existeLocal && !apiOk) return { ok: false, error: "Ya existe una cuenta con ese correo." };
+      if (!existeLocal) {
+        users.push({ nombre, apellido, email, password, role: "cliente" });
+        saveUsers(users);
+      }
+      return { ok: true };
     },
     async login(email, password) {
       email = email.trim().toLowerCase();
@@ -228,11 +231,9 @@
         localStorage.setItem(SESSION_KEY, JSON.stringify(d.user));
         return { ok: true, user: d.user, via: "api" };
       } catch (e) {
-        if (e.status === 401) return { ok: false, error: "Correo o contraseña incorrectos." };
-        if (e.status) return { ok: false, error: e.message };
-        // sin backend -> respaldo local
+        // Cualquier fallo de la API (401, 404, 500 o sin backend) -> probar respaldo local
       }
-      // 2) Respaldo local
+      // 2) Respaldo local: permite reingresar con el mismo correo y contraseña
       const user = getUsers().find((u) => u.email === email && u.password === password);
       if (!user) return { ok: false, error: "Correo o contraseña incorrectos." };
       localStorage.setItem(SESSION_KEY, JSON.stringify({ email: user.email, nombre: user.nombre, role: user.role }));
