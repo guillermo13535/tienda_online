@@ -256,7 +256,29 @@
       try { return JSON.parse(localStorage.getItem(SESSION_KEY)); }
       catch { return null; }
     },
-    isAdmin() { const u = this.current(); return !!u && u.role === "admin"; }
+    // Devuelve el registro completo del usuario actual (con teléfono, dirección, etc.)
+    fullUser() {
+      const s = this.current();
+      if (!s) return null;
+      return getUsers().find((u) => u.email === s.email) || s;
+    },
+    isAdmin() { const u = this.current(); return !!u && u.role === "admin"; },
+    // Actualiza datos del perfil (teléfono, dirección, etc.) en el usuario local
+    updateProfile(datos) {
+      const sess = this.current();
+      if (!sess) return null;
+      const users = getUsers();
+      const u = users.find((x) => x.email === sess.email);
+      if (u) {
+        Object.assign(u, datos);
+        saveUsers(users);
+        if (datos.nombre) {
+          sess.nombre = datos.nombre;
+          localStorage.setItem(SESSION_KEY, JSON.stringify(sess));
+        }
+      }
+      return u;
+    }
   };
   ensureAdmin();
 
@@ -276,8 +298,86 @@
       return api("/api/orders", { method: "POST", body: { items, metodo } });
     },
     // API: listar pedidos del usuario (o todos si es admin)
-    listRemote() { return api("/api/orders"); }
+    listRemote() { return api("/api/orders"); },
+    // Actualizar estado del pedido (admin) con respaldo local
+    async updateEstado(id, estado) {
+      try {
+        return await api("/api/orders/" + id + "/estado", { method: "PUT", body: { estado } });
+      } catch (e) {
+        if (e.status) throw e; // error real del servidor
+      }
+      const list = this.all();
+      const o = list.find((x) => x.id === id);
+      if (o) {
+        o.estado = estado;
+        (o.historial = o.historial || []).push({ estado, fecha: new Date().toISOString() });
+        localStorage.setItem(ORDERS_KEY, JSON.stringify(list));
+      }
+      return o;
+    }
   };
+
+  /* ---------- Estados de pedido y notificaciones ---------- */
+  const ESTADOS = ["Pagado", "Despachado", "En camino", "Entregado"];
+  const NOTIF_KEY = "tecnoshop_notifs";
+  const SEEN_KEY = "tecnoshop_notif_seen";
+
+  function getNotifs() { try { return JSON.parse(localStorage.getItem(NOTIF_KEY)) || []; } catch { return []; } }
+  function saveNotifs(l) { localStorage.setItem(NOTIF_KEY, JSON.stringify(l.slice(0, 30))); }
+  function estadoMsg(estado, id) {
+    return ({
+      "Pagado": `🛒 ¡Compra realizada! Tu pedido ${id} fue confirmado.`,
+      "Despachado": `📦 El vendedor despachó tu pedido ${id}.`,
+      "En camino": `🚚 ¡Tu pedido ${id} está en camino! El repartidor va hacia ti.`,
+      "Entregado": `✅ Tu pedido ${id} fue entregado. ¡Gracias por comprar!`
+    })[estado] || `Tu pedido ${id} cambió a "${estado}".`;
+  }
+  function pushNotif(estado, id) {
+    const l = getNotifs();
+    l.unshift({ id, estado, msg: estadoMsg(estado, id), fecha: Date.now(), leido: false });
+    saveNotifs(l);
+  }
+  function notifyPurchase(id) {
+    pushNotif("Pagado", id);
+    let seen = {};
+    try { seen = JSON.parse(localStorage.getItem(SEEN_KEY)) || {}; } catch (_) {}
+    seen[id] = "Pagado";
+    localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
+    renderBell();
+  }
+  async function checkOrderUpdates() {
+    if (!Auth.current()) return;
+    let orders = [];
+    try { orders = await api("/api/orders"); } catch { orders = Orders.forCurrent(); }
+    let seen = {};
+    try { seen = JSON.parse(localStorage.getItem(SEEN_KEY)) || {}; } catch (_) {}
+    let cambio = false;
+    orders.forEach((o) => {
+      const est = o.estado || "Pagado";
+      if (seen[o.id] === undefined) seen[o.id] = est;        // primera vez: no notificar pedidos antiguos
+      else if (seen[o.id] !== est) { pushNotif(est, o.id); seen[o.id] = est; cambio = true; }
+    });
+    localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
+    renderBell();
+    if (cambio) { const n = getNotifs().find((x) => !x.leido); if (n) showToast(n.msg); }
+  }
+  function markNotifsRead() {
+    const l = getNotifs().map((n) => ({ ...n, leido: true }));
+    saveNotifs(l); renderBell();
+  }
+  function renderBell() {
+    const count = getNotifs().filter((n) => !n.leido).length;
+    document.querySelectorAll("[data-bell]").forEach((el) => {
+      el.textContent = count; el.style.display = count > 0 ? "grid" : "none";
+    });
+    const list = document.getElementById("bellList");
+    if (list) {
+      const notifs = getNotifs();
+      list.innerHTML = notifs.length
+        ? notifs.map((n) => `<div class="bell-item ${n.leido ? "" : "unread"}">${n.msg}<small>${new Date(n.fecha).toLocaleString("es-CL")}</small></div>`).join("")
+        : `<p class="bell-empty">No tienes notificaciones.</p>`;
+    }
+  }
 
   /* ---------- Toast ---------- */
   let toastTimer;
@@ -374,11 +474,19 @@
       .join("");
 
     const accountHtml = user
-      ? `<a href="pedidos.html">Hola, ${user.nombre}</a>
+      ? `<a href="perfil.html">Hola, ${user.nombre}</a>
+         <a href="perfil.html">Mi perfil</a>
          <a href="pedidos.html">Mis pedidos</a>
          ${user.role === "admin" ? '<a href="admin.html">Admin</a>' : ""}
          <a href="#" id="logoutLink">Salir</a>`
       : `<a href="registro.html">Crear cuenta</a><a href="login.html">Ingresar</a>`;
+
+    const bellHtml = user
+      ? `<div class="bell-wrap">
+           <button class="bell-btn" id="bellBtn" aria-label="Notificaciones">🔔<span class="bell-count" data-bell>0</span></button>
+           <div class="bell-panel" id="bellPanel"><div class="bell-head">Notificaciones</div><div id="bellList"></div></div>
+         </div>`
+      : "";
 
     const header = document.querySelector("[data-include='header']");
     if (header) {
@@ -401,6 +509,7 @@
                   <div><small>Enviar a</small><strong>Santiago, Chile</strong></div>
                 </div>
                 <nav class="ml-account">${accountHtml}</nav>
+                ${bellHtml}
                 <a href="carrito.html" class="ml-cart" aria-label="Carrito">
                   🛒 <span class="ml-cart__count" data-cart-count>0</span>
                 </a>
@@ -435,6 +544,23 @@
         showToast("Sesión cerrada");
         setTimeout(() => (window.location.href = "index.html"), 700);
       });
+
+      // Campana de notificaciones
+      const bellBtn = document.getElementById("bellBtn");
+      if (bellBtn) {
+        bellBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const panel = document.getElementById("bellPanel");
+          const abrir = !panel.classList.contains("open");
+          panel.classList.toggle("open", abrir);
+          if (abrir) markNotifsRead();
+        });
+        document.addEventListener("click", () => {
+          const panel = document.getElementById("bellPanel");
+          if (panel) panel.classList.remove("open");
+        });
+        renderBell();
+      }
     }
 
     const footer = document.querySelector("[data-include='footer']");
@@ -484,6 +610,7 @@
     cartTotals, updateCartCount, showToast,
     saveProducts, resetProducts, decrementStock,
     api, syncProducts, isApiOnline,
+    ESTADOS, notifyPurchase, checkOrderUpdates, renderBell, getNotifs,
     Auth, Orders
   };
 
@@ -617,17 +744,7 @@
   }
 
   /* ---------- Init ---------- */
-  const PUBLIC_PAGES = ["login", "registro"];
-
   document.addEventListener("DOMContentLoaded", function () {
-    const page = document.body.dataset.page || "";
-
-    // Portón de autenticación: hay que iniciar sesión o registrarse primero
-    if (!Auth.current() && !PUBLIC_PAGES.includes(page)) {
-      window.location.replace("login.html");
-      return;
-    }
-
     renderChrome();
     updateCartCount();
     initAssistant();
@@ -642,8 +759,9 @@
       showWelcome(welcome);
     }
 
-    // Activar control de inactividad cuando hay sesión
+    // Sesión activa: notificaciones de pedidos + control de inactividad
     if (Auth.current()) {
+      checkOrderUpdates();
       ["mousemove", "keydown", "click", "scroll", "touchstart"].forEach((ev) =>
         document.addEventListener(ev, resetInactivity, { passive: true }));
       resetInactivity();

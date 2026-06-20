@@ -421,6 +421,18 @@
     const wrap = document.getElementById("cartContent");
     if (!wrap) return;
 
+    // Requiere iniciar sesión para abrir el carrito
+    if (!S.Auth.current()) {
+      wrap.innerHTML = `<div class="cart-empty">
+        <p style="font-size:3rem">🔒</p>
+        <p>Inicia sesión o regístrate para ver tu carrito y comprar.</p>
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:16px">
+          <a class="btn btn--primary" href="login.html">Iniciar sesión</a>
+          <a class="btn btn--outline" href="registro.html">Crear cuenta</a>
+        </div></div>`;
+      return;
+    }
+
     function render() {
       const cart = getCart();
       const { total } = cartTotals();
@@ -510,6 +522,18 @@
   function initCheckout() {
     const wrap = document.getElementById("checkoutContent");
     if (!wrap) return;
+
+    // Requiere iniciar sesión para pagar
+    if (!S.Auth.current()) {
+      wrap.innerHTML = `<div class="cart-empty">
+        <p style="font-size:3rem">🔒</p>
+        <p>Debes iniciar sesión para finalizar la compra.</p>
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:16px">
+          <a class="btn btn--primary" href="login.html">Iniciar sesión</a>
+          <a class="btn btn--outline" href="registro.html">Crear cuenta</a>
+        </div></div>`;
+      return;
+    }
 
     const cart = getCart();
     const { total } = cartTotals();
@@ -736,7 +760,10 @@
           id: "TS-" + Date.now().toString().slice(-8),
           email: correo || (user ? user.email : "invitado"), correo,
           cliente: user ? user.nombre : "Cliente",
-          items, total, metodo: metodoLabel, fecha: new Date().toISOString()
+          items, total, metodo: metodoLabel,
+          estado: "Pagado",
+          historial: [{ estado: "Pagado", fecha: new Date().toISOString() }],
+          fecha: new Date().toISOString()
         };
         S.Orders.add(order);
         S.decrementStock(cartSnapshot);
@@ -744,6 +771,7 @@
 
       const ordenId = order.id;
       const totalFinal = order.total != null ? order.total : total;
+      S.notifyPurchase(ordenId); // 🔔 notificación: compra realizada
 
       // Webhook: notificar la compra a un sistema externo (POST)
       if (window.Integrations) {
@@ -891,13 +919,22 @@
       const fecha = new Date(o.fecha).toLocaleString("es-CL");
       const itemsHtml = o.items.map((it) =>
         `<li><span>${it.qty} x ${it.nombre}</span><strong>${money(it.price * it.qty)}</strong></li>`).join("");
+      const estados = S.ESTADOS;
+      const actual = o.estado || "Pagado";
+      const idx = estados.indexOf(actual);
+      const tracker = `<div class="tracker">` + estados.map((e, i) =>
+        `<div class="tracker__step ${i <= idx ? "done" : ""} ${i === idx ? "current" : ""}">
+           <span class="tracker__dot">${i < idx ? "✓" : (i === idx ? "●" : i + 1)}</span>
+           <small>${e}</small>
+         </div>`).join("") + `</div>`;
       return `<div class="order-card">
         <div class="order-card__head">
           <div><strong>Orden ${o.id}</strong><br><small class="muted">${fecha}${user.role === "admin" ? " · " + o.email : ""}</small></div>
           <div class="order-card__total">${money(o.total)}</div>
         </div>
+        ${tracker}
         <ul class="order-card__items">${itemsHtml}</ul>
-        <div class="order-card__foot">💳 ${o.metodo} · <span class="badge-ok">✓ Confirmado</span>
+        <div class="order-card__foot">💳 ${o.metodo} · Estado: <span class="badge-ok">${actual}</span>
           <button class="btn btn--outline btn-sm" data-boleta="${o.id}" style="margin-left:auto">🧾 Descargar boleta</button>
         </div>
       </div>`;
@@ -967,7 +1004,11 @@
                 </td>
               </tr>`).join("")}</tbody>
           </table>
-        </div>`;
+        </div>
+
+        <h2 class="section-title" style="margin-top:40px">Gestión de pedidos</h2>
+        <p class="muted" style="margin-bottom:10px">Cambia el estado para notificar al cliente (Pagado → Despachado → En camino → Entregado).</p>
+        <div id="adminOrders"><p class="muted">Cargando pedidos...</p></div>`;
 
       document.getElementById("btnNuevo").addEventListener("click", () => { editId = null; showForm(); });
       document.getElementById("btnReset").addEventListener("click", () => {
@@ -985,6 +1026,36 @@
             if (idx >= 0) PRODUCTS.splice(idx, 1);
             S.saveProducts(); render(); S.showToast("Producto eliminado");
           }
+        }));
+
+      loadOrders();
+    }
+
+    // Lista de pedidos con selector de estado (notifica al cliente)
+    async function loadOrders() {
+      const box = document.getElementById("adminOrders");
+      if (!box) return;
+      let orders = [];
+      try { orders = await S.Orders.listRemote(); } catch { orders = S.Orders.all(); }
+      if (!orders.length) { box.innerHTML = `<p class="muted">No hay pedidos aún.</p>`; return; }
+      box.innerHTML = `<div style="overflow-x:auto"><table class="cart-table">
+        <thead><tr><th>Orden</th><th>Cliente</th><th>Total</th><th>Estado</th></tr></thead>
+        <tbody>${orders.map((o) => `
+          <tr>
+            <td data-label="Orden">${o.id}</td>
+            <td data-label="Cliente">${o.email}</td>
+            <td data-label="Total">${money(o.total)}</td>
+            <td data-label="Estado">
+              <select class="select" data-order="${o.id}">
+                ${S.ESTADOS.map((e) => `<option ${(o.estado || "Pagado") === e ? "selected" : ""}>${e}</option>`).join("")}
+              </select>
+            </td>
+          </tr>`).join("")}</tbody>
+      </table></div>`;
+      box.querySelectorAll("[data-order]").forEach((sel) =>
+        sel.addEventListener("change", async () => {
+          try { await S.Orders.updateEstado(sel.dataset.order, sel.value); S.showToast("Estado actualizado: " + sel.value); }
+          catch (e) { S.showToast("No se pudo actualizar: " + (e.message || "error")); }
         }));
     }
 
@@ -1072,6 +1143,89 @@
     }
   });
 
+  /* ---------- Página: Perfil del cliente ---------- */
+  function initPerfil() {
+    const wrap = document.getElementById("perfilContent");
+    if (!wrap) return;
+    const u = S.Auth.fullUser();
+    if (!u) {
+      wrap.innerHTML = `<div class="cart-empty"><p style="font-size:3rem">🔒</p>
+        <p>Inicia sesión para ver tu perfil.</p>
+        <a class="btn btn--primary" href="login.html" style="margin-top:14px">Iniciar sesión</a></div>`;
+      return;
+    }
+    const inicial = (u.nombre || "U").charAt(0).toUpperCase();
+    const pedidos = S.Orders.forCurrent().length;
+
+    wrap.innerHTML = `
+      <div class="perfil-grid">
+        <!-- Tarjeta de datos -->
+        <div class="panel">
+          <div class="perfil-head">
+            <div class="perfil-avatar">${inicial}</div>
+            <div>
+              <h3 style="margin:0">${u.nombre} ${u.apellido || ""}</h3>
+              <p class="muted" style="margin:0">${u.email}</p>
+              <span class="badge-ok">${u.role === "admin" ? "Administrador" : "Cliente"}</span>
+            </div>
+          </div>
+
+          <h3 style="margin-top:22px">Mis datos</h3>
+          <form id="perfilForm">
+            <div class="admin-form__grid">
+              <div class="field"><label>Nombre</label><input id="pf_nombre" value="${(u.nombre || "").replace(/"/g, "&quot;")}"></div>
+              <div class="field"><label>Apellido</label><input id="pf_apellido" value="${(u.apellido || "").replace(/"/g, "&quot;")}"></div>
+              <div class="field"><label>Teléfono</label><input id="pf_tel" value="${u.telefono || ""}" placeholder="+56 9 ..."></div>
+              <div class="field"><label>Correo</label><input value="${u.email}" disabled></div>
+            </div>
+            <div class="field"><label>Dirección de envío</label><input id="pf_dir" value="${(u.direccion || "").replace(/"/g, "&quot;")}" placeholder="Calle, número, comuna, ciudad"></div>
+            <button class="btn btn--primary" type="submit">Guardar cambios</button>
+            <span class="email-status" id="pf_msg"></span>
+          </form>
+        </div>
+
+        <!-- Apartados / accesos -->
+        <div class="perfil-side">
+          <a href="pedidos.html" class="perfil-card">
+            <span class="perfil-card__ico">📦</span>
+            <span><strong>Mis pedidos</strong><small>${pedidos} pedido(s) realizados</small></span>
+          </a>
+          <a href="carrito.html" class="perfil-card">
+            <span class="perfil-card__ico">🛒</span>
+            <span><strong>Mi carrito</strong><small>Ver productos guardados</small></span>
+          </a>
+          <a href="productos.html" class="perfil-card">
+            <span class="perfil-card__ico">🛍️</span>
+            <span><strong>Seguir comprando</strong><small>Explorar el catálogo</small></span>
+          </a>
+          ${u.role === "admin" ? `<a href="admin.html" class="perfil-card">
+            <span class="perfil-card__ico">⚙️</span>
+            <span><strong>Administración</strong><small>Gestionar productos y pedidos</small></span></a>` : ""}
+          <a href="#" id="pf_logout" class="perfil-card">
+            <span class="perfil-card__ico">🚪</span>
+            <span><strong>Cerrar sesión</strong><small>Salir de mi cuenta</small></span>
+          </a>
+        </div>
+      </div>`;
+
+    document.getElementById("perfilForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      S.Auth.updateProfile({
+        nombre: document.getElementById("pf_nombre").value.trim() || u.nombre,
+        apellido: document.getElementById("pf_apellido").value.trim(),
+        telefono: document.getElementById("pf_tel").value.trim(),
+        direccion: document.getElementById("pf_dir").value.trim()
+      });
+      document.getElementById("pf_msg").innerHTML = "✅ Datos guardados correctamente.";
+      S.showToast("Perfil actualizado");
+    });
+    document.getElementById("pf_logout").addEventListener("click", (e) => {
+      e.preventDefault();
+      S.Auth.logout();
+      window.location.href = "index.html";
+    });
+  }
+
   /* ---------- Bootstrap por página ---------- */
   document.addEventListener("DOMContentLoaded", function () {
     const page = document.body.dataset.page;
@@ -1083,6 +1237,7 @@
       if (page === "checkout") initCheckout();
       if (page === "pedidos") initPedidos();
       if (page === "admin") initAdmin();
+      if (page === "perfil") initPerfil();
     }
     run();
     // Cuando el catálogo llega desde la API, re-renderizar las páginas que lo muestran

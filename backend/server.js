@@ -159,10 +159,26 @@ async function api(req, res, p) {
     const order = {
       id: "TS-" + Date.now().toString().slice(-8), userId: u.id, email: u.email,
       cliente: u.nombre, items: detail, total, metodo: metodo || "Tarjeta",
+      estado: "Pagado",
+      historial: [{ estado: "Pagado", fecha: new Date().toISOString() }],
       fecha: new Date().toISOString()
     };
     db.data.orders.unshift(order); db.save();
     return json(res, 201, order);
+  }
+
+  // PEDIDOS: actualizar estado (solo admin) -> Pagado / Despachado / En camino / Entregado
+  const oem = p.match(/^\/api\/orders\/([\w-]+)\/estado$/);
+  if (oem && m === "PUT") {
+    const u = currentUser(req);
+    if (!u || u.role !== "admin") return json(res, 403, { error: "Solo administradores" });
+    const { estado } = await readBody(req);
+    const o = db.data.orders.find((x) => x.id === oem[1]);
+    if (!o) return json(res, 404, { error: "Pedido no encontrado" });
+    o.estado = estado;
+    (o.historial = o.historial || []).push({ estado, fecha: new Date().toISOString() });
+    db.save();
+    return json(res, 200, o);
   }
 
   // MERCADO PAGO: crear preferencia de pago (seguro, con el Access Token del servidor)
