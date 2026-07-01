@@ -22,8 +22,8 @@
         <p class="sub">Bienvenido de vuelta a TecnoShop</p>
 
         <div class="field">
-          <label for="email">Correo electrónico</label>
-          <input type="email" id="email" placeholder="tucorreo@ejemplo.com" />
+          <label for="email">Correo o teléfono</label>
+          <input type="text" id="email" placeholder="tucorreo@ejemplo.com  o  +56 9 1234 5678" />
           <span class="error" id="errEmail"></span>
         </div>
 
@@ -58,9 +58,11 @@
       const errPass = document.getElementById("errPass");
       let ok = true;
 
+      const val = email.value.trim();
       const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRe.test(email.value.trim())) {
-        errEmail.textContent = "Ingresa un correo válido.";
+      const telOk = val.replace(/\D/g, "").length >= 8;
+      if (!emailRe.test(val) && !telOk) {
+        errEmail.textContent = "Ingresa un correo o teléfono válido.";
         ok = false;
       } else { errEmail.textContent = ""; }
 

@@ -46,6 +46,13 @@ function currentUser(req) {
 function publicUser(u) {
   return { id: u.id, nombre: u.nombre, email: u.email, role: u.role };
 }
+// Compara teléfonos ignorando espacios/código de país (uno termina en el otro)
+function phoneEq(a, b) {
+  a = String(a || "").replace(/\D/g, "");
+  b = String(b || "").replace(/\D/g, "");
+  if (a.length < 8 || b.length < 8) return false;
+  return a === b || a.endsWith(b) || b.endsWith(a);
+}
 
 /* ---------- Archivos estáticos (sirve el sitio) ---------- */
 const MIME = {
@@ -107,20 +114,22 @@ async function api(req, res, p) {
 
   // AUTENTICACIÓN
   if (p === "/api/auth/register" && m === "POST") {
-    const { nombre, apellido, email, password } = await readBody(req);
+    const { nombre, apellido, email, password, telefono } = await readBody(req);
     if (!email || !password) return json(res, 400, { error: "Faltan datos" });
     const mail = String(email).toLowerCase().trim();
-    if (db.data.users.some((u) => u.email === mail)) return json(res, 409, { error: "Ya existe una cuenta con ese correo" });
+    const tel = String(telefono || "").trim();
+    const dup = db.data.users.some((u) => u.email === mail || phoneEq(u.telefono, tel));
+    if (dup) return json(res, 409, { error: "Ya existe una cuenta con ese correo o teléfono" });
     const id = Math.max(0, ...db.data.users.map((u) => u.id)) + 1;
-    db.data.users.push({ id, nombre, apellido: apellido || "", email: mail, password: auth.hashPassword(password), role: "cliente" });
+    db.data.users.push({ id, nombre, apellido: apellido || "", email: mail, telefono: tel, password: auth.hashPassword(password), role: "cliente" });
     db.save();
     return json(res, 201, { ok: true });
   }
   if (p === "/api/auth/login" && m === "POST") {
     const { email, password } = await readBody(req);
-    const mail = String(email || "").toLowerCase().trim();
-    const user = db.data.users.find((u) => u.email === mail);
-    if (!user || !auth.verifyPassword(password, user.password)) return json(res, 401, { error: "Correo o contraseña incorrectos" });
+    const id = String(email || "").toLowerCase().trim();
+    const user = db.data.users.find((u) => u.email === id || phoneEq(u.telefono, id));
+    if (!user || !auth.verifyPassword(password, user.password)) return json(res, 401, { error: "Correo/teléfono o contraseña incorrectos" });
     return json(res, 200, { token: auth.sign({ id: user.id, role: user.role }), user: publicUser(user) });
   }
   if (p === "/api/auth/me" && m === "GET") {

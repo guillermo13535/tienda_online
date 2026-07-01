@@ -79,6 +79,13 @@
   const money = (n) => "$" + Number(n).toLocaleString("es-CL");
   function findProduct(id) { return PRODUCTS.find((p) => p.id === Number(id)); }
   function stars(n) { return "★".repeat(n) + "☆".repeat(5 - n); }
+  // Compara teléfonos ignorando espacios/código de país (uno termina en el otro)
+  function phoneEq(a, b) {
+    a = String(a || "").replace(/\D/g, "");
+    b = String(b || "").replace(/\D/g, "");
+    if (a.length < 8 || b.length < 8) return false;
+    return a === b || a.endsWith(b) || b.endsWith(a);
+  }
   function discountPct(p) {
     if (!p.oldPrice || p.oldPrice <= p.price) return 0;
     return Math.round((1 - p.price / p.oldPrice) * 100);
@@ -201,41 +208,43 @@
     }
   }
   const Auth = {
-    async register({ nombre, apellido, email, password }) {
-      email = email.trim().toLowerCase();
+    async register({ nombre, apellido, email, password, telefono }) {
+      email = (email || "").trim().toLowerCase();
+      telefono = (telefono || "").trim();
       let apiOk = false;
       // 1) Intentar vía API (backend)
       try {
-        await api("/api/auth/register", { method: "POST", body: { nombre, apellido, email, password } });
+        await api("/api/auth/register", { method: "POST", body: { nombre, apellido, email, password, telefono } });
         apiOk = true;
       } catch (e) {
-        if (e.status === 409) return { ok: false, error: "Ya existe una cuenta con ese correo." };
+        if (e.status === 409) return { ok: false, error: "Ya existe una cuenta con ese correo o teléfono." };
         // 404 / 500 / sin backend -> seguimos con registro local
       }
       // 2) Guardar copia local (así puede iniciar sesión con o sin backend)
       const users = getUsers();
-      const existeLocal = users.some((u) => u.email === email);
-      if (existeLocal && !apiOk) return { ok: false, error: "Ya existe una cuenta con ese correo." };
+      const existeLocal = users.some((u) => u.email === email || phoneEq(u.telefono, telefono));
+      if (existeLocal && !apiOk) return { ok: false, error: "Ya existe una cuenta con ese correo o teléfono." };
       if (!existeLocal) {
-        users.push({ nombre, apellido, email, password, role: "cliente" });
+        users.push({ nombre, apellido, email, telefono, password, role: "cliente" });
         saveUsers(users);
       }
       return { ok: true };
     },
-    async login(email, password) {
-      email = email.trim().toLowerCase();
-      // 1) Intentar vía API
+    async login(identificador, password) {
+      const id = (identificador || "").trim().toLowerCase();
+      // 1) Intentar vía API (acepta correo o teléfono)
       try {
-        const d = await api("/api/auth/login", { method: "POST", body: { email, password } });
+        const d = await api("/api/auth/login", { method: "POST", body: { email: id, password } });
         localStorage.setItem(TOKEN_KEY, d.token);
         localStorage.setItem(SESSION_KEY, JSON.stringify(d.user));
         return { ok: true, user: d.user, via: "api" };
       } catch (e) {
-        // Cualquier fallo de la API (401, 404, 500 o sin backend) -> probar respaldo local
+        // Cualquier fallo de la API -> probar respaldo local
       }
-      // 2) Respaldo local: permite reingresar con el mismo correo y contraseña
-      const user = getUsers().find((u) => u.email === email && u.password === password);
-      if (!user) return { ok: false, error: "Correo o contraseña incorrectos." };
+      // 2) Respaldo local: buscar por correo O por teléfono
+      const user = getUsers().find((u) =>
+        u.password === password && (u.email === id || phoneEq(u.telefono, id)));
+      if (!user) return { ok: false, error: "Correo/teléfono o contraseña incorrectos." };
       localStorage.setItem(SESSION_KEY, JSON.stringify({ email: user.email, nombre: user.nombre, role: user.role }));
       return { ok: true, user };
     },
