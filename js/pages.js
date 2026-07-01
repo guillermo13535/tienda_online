@@ -649,28 +649,66 @@
       const box = document.getElementById("mpBtns");
       const I = window.Integrations;
 
-      function demoButton(msg) {
-        box.innerHTML = `<p class="muted" style="font-size:.85rem">${msg}</p>
-          <button class="btn btn--primary btn--block" id="mpDemo">Pagar con Mercado Pago (demo)</button>`;
-        document.getElementById("mpDemo").addEventListener("click", () => finalizar("Mercado Pago"));
+      // Checkout simulado de Mercado Pago: dinero de prueba + errores de transacción
+      function simularMP(nota) {
+        box.innerHTML = `
+          <div class="mp-sim">
+            <p class="mp-sim__head">💙 Mercado Pago <span>· modo prueba (dinero ficticio)</span></p>
+            ${nota ? `<p class="muted" style="font-size:.78rem">${nota}</p>` : ""}
+            <label style="font-size:.85rem; font-weight:600">Tarjeta de prueba (elige el resultado):</label>
+            <select id="mpTest" class="select" style="width:100%; margin:6px 0 12px">
+              <option value="APRO">✅ APRO — Pago aprobado</option>
+              <option value="FUND">❌ FUND — Fondos insuficientes</option>
+              <option value="SECU">❌ SECU — Código de seguridad inválido</option>
+              <option value="EXPI">❌ EXPI — Tarjeta vencida</option>
+              <option value="CALL">⚠️ CALL — Error al procesar el pago</option>
+            </select>
+            <button class="btn btn--primary btn--block" id="mpPay">Pagar ${money(total)} (prueba)</button>
+            <div class="integra-result" id="mpMsg"></div>
+          </div>`;
+        document.getElementById("mpPay").addEventListener("click", () => {
+          const r = document.getElementById("mpTest").value;
+          const msgEl = document.getElementById("mpMsg");
+          const payBtn = document.getElementById("mpPay");
+          payBtn.disabled = true;
+          msgEl.className = "integra-result";
+          msgEl.textContent = "⏳ Procesando pago en Mercado Pago...";
+          setTimeout(() => {
+            if (r === "APRO") {
+              msgEl.className = "integra-result ok";
+              msgEl.textContent = "✅ Pago aprobado. Generando tu boleta...";
+              setTimeout(() => finalizar("Mercado Pago"), 800);
+            } else {
+              const errores = {
+                FUND: "Tu tarjeta no tiene fondos suficientes.",
+                SECU: "El código de seguridad (CVV) es inválido.",
+                EXPI: "La tarjeta está vencida.",
+                CALL: "No pudimos procesar el pago. Intenta nuevamente más tarde."
+              };
+              msgEl.className = "integra-result warn";
+              msgEl.innerHTML = `❌ <strong>Transacción rechazada:</strong> ${errores[r]}<br>Tu pedido NO se realizó. Puedes reintentar o cambiar de método.`;
+              payBtn.disabled = false;
+            }
+          }, 1300);
+        });
       }
 
       if (mpRendered) return;
       mpRendered = true;
 
-      // Si Mercado Pago está configurado, crear preferencia en el backend y mostrar el botón oficial
+      // Si hay credenciales reales de Mercado Pago, usar el botón oficial (sandbox)
       if (I && I.mpConfigured && I.mpConfigured()) {
         box.innerHTML = "<p class='muted'>Cargando Mercado Pago...</p>";
         try {
           const pref = await I.crearPreferencia(getCart());
-          if (pref && pref.demo) { demoButton("Mercado Pago en modo demostración (falta configurar el Access Token en el servidor)."); return; }
+          if (pref && pref.demo) { simularMP("No hay Access Token en el servidor; usando modo prueba."); return; }
           box.innerHTML = '<div id="mp-container"></div>';
           await I.renderMercadoPago("mp-container", pref.id);
         } catch (e) {
-          demoButton("No se pudo iniciar Mercado Pago (" + e.message + ").");
+          simularMP("No se pudo conectar con Mercado Pago (" + e.message + ").");
         }
       } else {
-        demoButton("Mercado Pago en modo demostración (configura tu Public Key para el pago real).");
+        simularMP("Configura tu Public Key para el pago real; por ahora usas dinero de prueba.");
       }
     }
 

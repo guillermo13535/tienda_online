@@ -213,7 +213,7 @@ async function api(req, res, p) {
       });
       const data = await r.json();
       if (!r.ok) return json(res, 502, { error: "Error de Mercado Pago", detalle: data });
-      return json(res, 200, { id: data.id, init_point: data.init_point });
+      return json(res, 200, { id: data.id, init_point: data.init_point, sandbox_init_point: data.sandbox_init_point });
     } catch (e) {
       return json(res, 502, { error: "No se pudo conectar con Mercado Pago: " + e.message });
     }

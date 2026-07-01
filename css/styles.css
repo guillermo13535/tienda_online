@@ -527,6 +527,12 @@ section.block { padding: 40px 0; }
 .pdp-info { list-style: none; display: grid; gap: 8px; }
 .pdp-info li { color: var(--muted); }
 
+/* ===== Checkout simulado de Mercado Pago ===== */
+.mp-sim { background: #0b1b2b; border: 1px solid #16324a; border-radius: 12px; padding: 16px; }
+.mp-sim__head { font-weight: 700; color: #4aa3ff; margin-bottom: 10px; }
+.mp-sim__head span { color: var(--muted); font-weight: 400; font-size: .78rem; }
+.mp-sim .select { background: #0d0d16; }
+
 /* ===== Campana de notificaciones ===== */
 .bell-wrap { position: relative; }
 .bell-btn { background: none; border: none; color: var(--text); font-size: 1.3rem; cursor: pointer; position: relative; }
