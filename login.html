@@ -22,8 +22,8 @@
         <p class="sub">Bienvenido de vuelta a TecnoShop</p>
 
         <div class="field">
-          <label for="email">Correo electrónico</label>
-          <input type="email" id="email" placeholder="tucorreo@ejemplo.com" />
+          <label for="email">Correo o teléfono</label>
+          <input type="text" id="email" placeholder="tucorreo@ejemplo.com  o  +56 9 1234 5678" />
           <span class="error" id="errEmail"></span>
         </div>
 
@@ -38,6 +38,25 @@
         <div class="auth-divider"><span>o</span></div>
         <div id="googleBtn" class="google-btn"></div>
 
+        <div class="auth-divider"><span>o con tu teléfono</span></div>
+        <button type="button" class="btn btn--outline btn--block" id="smsToggle">📱 Ingresar con código SMS</button>
+        <div id="smsFlow" hidden style="margin-top:14px">
+          <div class="field">
+            <label for="smsTel">Número de teléfono</label>
+            <input type="tel" id="smsTel" placeholder="+56 9 1234 5678" />
+            <span class="error" id="smsErr"></span>
+          </div>
+          <button type="button" class="btn btn--primary btn--block" id="smsSend">Enviar código</button>
+          <div id="smsStep2" hidden style="margin-top:12px">
+            <div class="field">
+              <label for="smsCode">Código de verificación</label>
+              <input type="text" id="smsCode" maxlength="6" inputmode="numeric" placeholder="6 dígitos" />
+            </div>
+            <button type="button" class="btn btn--primary btn--block" id="smsVerify">Verificar y entrar</button>
+          </div>
+          <div class="integra-result" id="smsMsg"></div>
+        </div>
+
         <p class="auth-foot">¿No tienes cuenta? <a href="registro.html">Regístrate aquí</a></p>
         <p class="auth-foot" style="font-size:.8rem">Demo admin: <strong>admin@tecnoshop.cl</strong> / <strong>admin123</strong></p>
       </form>
@@ -50,7 +69,7 @@
   <script src="js/store.js"></script>
   <script src="js/google-auth.js"></script>
   <script>
-    document.getElementById("loginForm").addEventListener("submit", function (e) {
+    document.getElementById("loginForm").addEventListener("submit", async function (e) {
       e.preventDefault();
       const email = document.getElementById("email");
       const pass = document.getElementById("password");
@@ -58,9 +77,11 @@
       const errPass = document.getElementById("errPass");
       let ok = true;
 
+      const val = email.value.trim();
       const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRe.test(email.value.trim())) {
-        errEmail.textContent = "Ingresa un correo válido.";
+      const telOk = val.replace(/\D/g, "").length >= 8;
+      if (!emailRe.test(val) && !telOk) {
+        errEmail.textContent = "Ingresa un correo o teléfono válido.";
         ok = false;
       } else { errEmail.textContent = ""; }
 
@@ -70,12 +91,55 @@
       } else { errPass.textContent = ""; }
 
       if (ok) {
-        const res = window.Store.Auth.login(email.value, pass.value);
+        const res = await window.Store.Auth.login(email.value, pass.value);
         if (!res.ok) { errPass.textContent = res.error; return; }
         localStorage.setItem("tecnoshop_welcome", res.user.nombre);
         const dest = res.user.role === "admin" ? "admin.html" : "index.html";
         setTimeout(() => (window.location.href = dest), 400);
       }
+    });
+
+    // ----- Ingreso con código SMS (OTP) -----
+    const smsToggle = document.getElementById("smsToggle");
+    const smsFlow = document.getElementById("smsFlow");
+    const smsMsg = document.getElementById("smsMsg");
+    smsToggle.addEventListener("click", () => { smsFlow.hidden = !smsFlow.hidden; });
+
+    document.getElementById("smsSend").addEventListener("click", async () => {
+      const tel = document.getElementById("smsTel").value.trim();
+      const err = document.getElementById("smsErr");
+      err.textContent = "";
+      if (tel.replace(/\D/g, "").length < 8) { err.textContent = "Ingresa un teléfono válido."; return; }
+      smsMsg.className = "integra-result";
+      smsMsg.textContent = "📨 Enviando código...";
+      try {
+        const r = await window.Store.otpSend(tel);
+        document.getElementById("smsStep2").hidden = false;
+        if (r.demo) {
+          smsMsg.className = "integra-result ok";
+          smsMsg.innerHTML = `🔐 (Modo demo) Tu código es: <strong style="font-size:1.2rem">${r.code}</strong><br><small>Con Twilio configurado, este código llega por SMS real.</small>`;
+        } else {
+          smsMsg.className = "integra-result ok";
+          smsMsg.textContent = "✅ Te enviamos un SMS con el código. Revisa tu teléfono.";
+        }
+      } catch (e) {
+        smsMsg.className = "integra-result warn";
+        smsMsg.textContent = "⚠️ " + (e.message || "No se pudo enviar el código.");
+      }
+    });
+
+    document.getElementById("smsVerify").addEventListener("click", async () => {
+      const tel = document.getElementById("smsTel").value.trim();
+      const code = document.getElementById("smsCode").value.trim();
+      smsMsg.className = "integra-result";
+      smsMsg.textContent = "⏳ Verificando...";
+      const ok = await window.Store.otpVerify(tel, code);
+      if (!ok) { smsMsg.className = "integra-result warn"; smsMsg.textContent = "❌ Código incorrecto o expirado."; return; }
+      const user = window.Store.Auth.loginByPhone(tel);
+      localStorage.setItem("tecnoshop_welcome", user.nombre);
+      smsMsg.className = "integra-result ok";
+      smsMsg.textContent = "✅ ¡Verificado! Entrando...";
+      setTimeout(() => (window.location.href = "index.html"), 500);
     });
   </script>
 </body>

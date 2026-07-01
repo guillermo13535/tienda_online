@@ -38,10 +38,54 @@
   }
   loadProducts();
 
+  /* ---------- Capa de API REST (con respaldo a localStorage) ---------- */
+  const TOKEN_KEY = "tecnoshop_token";
+  function getToken() { return localStorage.getItem(TOKEN_KEY) || ""; }
+  let apiOnline = false;
+
+  async function api(path, { method = "GET", body } = {}) {
+    const headers = { "Content-Type": "application/json" };
+    const tk = getToken();
+    if (tk) headers.Authorization = "Bearer " + tk;
+    const res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      const e = new Error((data && data.error) || ("HTTP " + res.status));
+      e.status = res.status; e.data = data;
+      throw e;
+    }
+    return data;
+  }
+
+  // Trae el catálogo desde la API; si el backend no está, usa el local
+  async function syncProducts() {
+    try {
+      const list = await api("/api/products");
+      if (Array.isArray(list) && list.length) {
+        PRODUCTS.length = 0;
+        list.forEach((p) => PRODUCTS.push(p));
+        saveProducts();
+        apiOnline = true;
+        document.dispatchEvent(new CustomEvent("tecnoshop:products"));
+      }
+    } catch (_) {
+      apiOnline = false; // backend no disponible -> seguimos con datos locales
+    }
+    return apiOnline;
+  }
+  function isApiOnline() { return apiOnline; }
+
   /* ---------- Helpers de formato ---------- */
   const money = (n) => "$" + Number(n).toLocaleString("es-CL");
   function findProduct(id) { return PRODUCTS.find((p) => p.id === Number(id)); }
   function stars(n) { return "★".repeat(n) + "☆".repeat(5 - n); }
+  // Compara teléfonos ignorando espacios/código de país (uno termina en el otro)
+  function phoneEq(a, b) {
+    a = String(a || "").replace(/\D/g, "");
+    b = String(b || "").replace(/\D/g, "");
+    if (a.length < 8 || b.length < 8) return false;
+    return a === b || a.endsWith(b) || b.endsWith(a);
+  }
   function discountPct(p) {
     if (!p.oldPrice || p.oldPrice <= p.price) return 0;
     return Math.round((1 - p.price / p.oldPrice) * 100);
@@ -164,24 +208,47 @@
     }
   }
   const Auth = {
-    register({ nombre, apellido, email, password }) {
-      email = email.trim().toLowerCase();
-      const users = getUsers();
-      if (users.some((u) => u.email === email)) {
-        return { ok: false, error: "Ya existe una cuenta con ese correo." };
+    async register({ nombre, apellido, email, password, telefono }) {
+      email = (email || "").trim().toLowerCase();
+      telefono = (telefono || "").trim();
+      let apiOk = false;
+      // 1) Intentar vía API (backend)
+      try {
+        await api("/api/auth/register", { method: "POST", body: { nombre, apellido, email, password, telefono } });
+        apiOk = true;
+      } catch (e) {
+        if (e.status === 409) return { ok: false, error: "Ya existe una cuenta con ese correo o teléfono." };
+        // 404 / 500 / sin backend -> seguimos con registro local
       }
-      users.push({ nombre, apellido, email, password, role: "cliente" });
-      saveUsers(users);
+      // 2) Guardar copia local (así puede iniciar sesión con o sin backend)
+      const users = getUsers();
+      const existeLocal = users.some((u) => u.email === email || phoneEq(u.telefono, telefono));
+      if (existeLocal && !apiOk) return { ok: false, error: "Ya existe una cuenta con ese correo o teléfono." };
+      if (!existeLocal) {
+        users.push({ nombre, apellido, email, telefono, password, role: "cliente" });
+        saveUsers(users);
+      }
       return { ok: true };
     },
-    login(email, password) {
-      email = email.trim().toLowerCase();
-      const user = getUsers().find((u) => u.email === email && u.password === password);
-      if (!user) return { ok: false, error: "Correo o contraseña incorrectos." };
+    async login(identificador, password) {
+      const id = (identificador || "").trim().toLowerCase();
+      // 1) Intentar vía API (acepta correo o teléfono)
+      try {
+        const d = await api("/api/auth/login", { method: "POST", body: { email: id, password } });
+        localStorage.setItem(TOKEN_KEY, d.token);
+        localStorage.setItem(SESSION_KEY, JSON.stringify(d.user));
+        return { ok: true, user: d.user, via: "api" };
+      } catch (e) {
+        // Cualquier fallo de la API -> probar respaldo local
+      }
+      // 2) Respaldo local: buscar por correo O por teléfono
+      const user = getUsers().find((u) =>
+        u.password === password && (u.email === id || phoneEq(u.telefono, id)));
+      if (!user) return { ok: false, error: "Correo/teléfono o contraseña incorrectos." };
       localStorage.setItem(SESSION_KEY, JSON.stringify({ email: user.email, nombre: user.nombre, role: user.role }));
       return { ok: true, user };
     },
-    // Inicio de sesión con un perfil externo (Google)
+    // Inicio de sesión con un perfil externo (Google) - local
     loginWithProfile({ nombre, apellido, email }) {
       email = (email || "").trim().toLowerCase();
       const users = getUsers();
@@ -194,12 +261,48 @@
       localStorage.setItem(SESSION_KEY, JSON.stringify({ email: user.email, nombre: user.nombre, role: user.role }));
       return user;
     },
-    logout() { localStorage.removeItem(SESSION_KEY); },
+    // Inicio de sesión por teléfono verificado (SMS/OTP)
+    loginByPhone(telefono) {
+      const users = getUsers();
+      let user = users.find((u) => phoneEq(u.telefono, telefono));
+      if (!user) {
+        const nombre = "Usuario " + String(telefono).replace(/\D/g, "").slice(-4);
+        user = { nombre, apellido: "", email: "", telefono, password: "", role: "cliente", via: "sms" };
+        users.push(user);
+        saveUsers(users);
+      }
+      const idSesion = user.email || String(telefono);
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ email: idSesion, nombre: user.nombre, role: user.role }));
+      return user;
+    },
+    logout() { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(TOKEN_KEY); },
     current() {
       try { return JSON.parse(localStorage.getItem(SESSION_KEY)); }
       catch { return null; }
     },
-    isAdmin() { const u = this.current(); return !!u && u.role === "admin"; }
+    // Devuelve el registro completo del usuario actual (con teléfono, dirección, etc.)
+    fullUser() {
+      const s = this.current();
+      if (!s) return null;
+      return getUsers().find((u) => u.email === s.email) || s;
+    },
+    isAdmin() { const u = this.current(); return !!u && u.role === "admin"; },
+    // Actualiza datos del perfil (teléfono, dirección, etc.) en el usuario local
+    updateProfile(datos) {
+      const sess = this.current();
+      if (!sess) return null;
+      const users = getUsers();
+      const u = users.find((x) => x.email === sess.email);
+      if (u) {
+        Object.assign(u, datos);
+        saveUsers(users);
+        if (datos.nombre) {
+          sess.nombre = datos.nombre;
+          localStorage.setItem(SESSION_KEY, JSON.stringify(sess));
+        }
+      }
+      return u;
+    }
   };
   ensureAdmin();
 
@@ -213,8 +316,92 @@
       if (!u) return [];
       if (u.role === "admin") return list;
       return list.filter((o) => o.email === u.email);
+    },
+    // API: crear pedido (el servidor valida stock y total)
+    createRemote(items, metodo) {
+      return api("/api/orders", { method: "POST", body: { items, metodo } });
+    },
+    // API: listar pedidos del usuario (o todos si es admin)
+    listRemote() { return api("/api/orders"); },
+    // Actualizar estado del pedido (admin) con respaldo local
+    async updateEstado(id, estado) {
+      try {
+        return await api("/api/orders/" + id + "/estado", { method: "PUT", body: { estado } });
+      } catch (e) {
+        if (e.status) throw e; // error real del servidor
+      }
+      const list = this.all();
+      const o = list.find((x) => x.id === id);
+      if (o) {
+        o.estado = estado;
+        (o.historial = o.historial || []).push({ estado, fecha: new Date().toISOString() });
+        localStorage.setItem(ORDERS_KEY, JSON.stringify(list));
+      }
+      return o;
     }
   };
+
+  /* ---------- Estados de pedido y notificaciones ---------- */
+  const ESTADOS = ["Pagado", "Despachado", "En camino", "Entregado"];
+  const NOTIF_KEY = "tecnoshop_notifs";
+  const SEEN_KEY = "tecnoshop_notif_seen";
+
+  function getNotifs() { try { return JSON.parse(localStorage.getItem(NOTIF_KEY)) || []; } catch { return []; } }
+  function saveNotifs(l) { localStorage.setItem(NOTIF_KEY, JSON.stringify(l.slice(0, 30))); }
+  function estadoMsg(estado, id) {
+    return ({
+      "Pagado": `🛒 ¡Compra realizada! Tu pedido ${id} fue confirmado.`,
+      "Despachado": `📦 El vendedor despachó tu pedido ${id}.`,
+      "En camino": `🚚 ¡Tu pedido ${id} está en camino! El repartidor va hacia ti.`,
+      "Entregado": `✅ Tu pedido ${id} fue entregado. ¡Gracias por comprar!`
+    })[estado] || `Tu pedido ${id} cambió a "${estado}".`;
+  }
+  function pushNotif(estado, id) {
+    const l = getNotifs();
+    l.unshift({ id, estado, msg: estadoMsg(estado, id), fecha: Date.now(), leido: false });
+    saveNotifs(l);
+  }
+  function notifyPurchase(id) {
+    pushNotif("Pagado", id);
+    let seen = {};
+    try { seen = JSON.parse(localStorage.getItem(SEEN_KEY)) || {}; } catch (_) {}
+    seen[id] = "Pagado";
+    localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
+    renderBell();
+  }
+  async function checkOrderUpdates() {
+    if (!Auth.current()) return;
+    let orders = [];
+    try { orders = await api("/api/orders"); } catch { orders = Orders.forCurrent(); }
+    let seen = {};
+    try { seen = JSON.parse(localStorage.getItem(SEEN_KEY)) || {}; } catch (_) {}
+    let cambio = false;
+    orders.forEach((o) => {
+      const est = o.estado || "Pagado";
+      if (seen[o.id] === undefined) seen[o.id] = est;        // primera vez: no notificar pedidos antiguos
+      else if (seen[o.id] !== est) { pushNotif(est, o.id); seen[o.id] = est; cambio = true; }
+    });
+    localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
+    renderBell();
+    if (cambio) { const n = getNotifs().find((x) => !x.leido); if (n) showToast(n.msg); }
+  }
+  function markNotifsRead() {
+    const l = getNotifs().map((n) => ({ ...n, leido: true }));
+    saveNotifs(l); renderBell();
+  }
+  function renderBell() {
+    const count = getNotifs().filter((n) => !n.leido).length;
+    document.querySelectorAll("[data-bell]").forEach((el) => {
+      el.textContent = count; el.style.display = count > 0 ? "grid" : "none";
+    });
+    const list = document.getElementById("bellList");
+    if (list) {
+      const notifs = getNotifs();
+      list.innerHTML = notifs.length
+        ? notifs.map((n) => `<div class="bell-item ${n.leido ? "" : "unread"}">${n.msg}<small>${new Date(n.fecha).toLocaleString("es-CL")}</small></div>`).join("")
+        : `<p class="bell-empty">No tienes notificaciones.</p>`;
+    }
+  }
 
   /* ---------- Toast ---------- */
   let toastTimer;
@@ -229,6 +416,34 @@
     el.classList.add("show");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
+  }
+
+  /* ---------- OTP por SMS (con respaldo demo) ---------- */
+  const OTP_KEY = "tecnoshop_otp";
+  async function otpSend(telefono) {
+    try {
+      return await api("/api/otp/send", { method: "POST", body: { telefono } });
+    } catch (e) {
+      if (e.status && e.status !== 404) throw e; // 400 = teléfono inválido, etc.
+    }
+    // Respaldo demo (sin backend): generamos y guardamos el código localmente
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    localStorage.setItem(OTP_KEY, JSON.stringify({ tel: String(telefono).replace(/\D/g, ""), code, exp: Date.now() + 5 * 60 * 1000 }));
+    return { ok: true, demo: true, code };
+  }
+  async function otpVerify(telefono, code) {
+    try {
+      const r = await api("/api/otp/verify", { method: "POST", body: { telefono, code } });
+      return r.ok === true;
+    } catch (e) {
+      if (e.status && e.status !== 404) return false; // código incorrecto/expirado en el backend
+    }
+    let rec = null;
+    try { rec = JSON.parse(localStorage.getItem(OTP_KEY)); } catch (_) {}
+    if (!rec || rec.exp < Date.now()) return false;
+    if (String(code) !== rec.code) return false;
+    localStorage.removeItem(OTP_KEY);
+    return true;
   }
 
   function goSearch(q) {
@@ -311,11 +526,19 @@
       .join("");
 
     const accountHtml = user
-      ? `<a href="pedidos.html">Hola, ${user.nombre}</a>
+      ? `<a href="perfil.html">Hola, ${user.nombre}</a>
+         <a href="perfil.html">Mi perfil</a>
          <a href="pedidos.html">Mis pedidos</a>
          ${user.role === "admin" ? '<a href="admin.html">Admin</a>' : ""}
          <a href="#" id="logoutLink">Salir</a>`
       : `<a href="registro.html">Crear cuenta</a><a href="login.html">Ingresar</a>`;
+
+    const bellHtml = user
+      ? `<div class="bell-wrap">
+           <button class="bell-btn" id="bellBtn" aria-label="Notificaciones">🔔<span class="bell-count" data-bell>0</span></button>
+           <div class="bell-panel" id="bellPanel"><div class="bell-head">Notificaciones</div><div id="bellList"></div></div>
+         </div>`
+      : "";
 
     const header = document.querySelector("[data-include='header']");
     if (header) {
@@ -338,6 +561,7 @@
                   <div><small>Enviar a</small><strong>Santiago, Chile</strong></div>
                 </div>
                 <nav class="ml-account">${accountHtml}</nav>
+                ${bellHtml}
                 <a href="carrito.html" class="ml-cart" aria-label="Carrito">
                   🛒 <span class="ml-cart__count" data-cart-count>0</span>
                 </a>
@@ -372,6 +596,23 @@
         showToast("Sesión cerrada");
         setTimeout(() => (window.location.href = "index.html"), 700);
       });
+
+      // Campana de notificaciones
+      const bellBtn = document.getElementById("bellBtn");
+      if (bellBtn) {
+        bellBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const panel = document.getElementById("bellPanel");
+          const abrir = !panel.classList.contains("open");
+          panel.classList.toggle("open", abrir);
+          if (abrir) markNotifsRead();
+        });
+        document.addEventListener("click", () => {
+          const panel = document.getElementById("bellPanel");
+          if (panel) panel.classList.remove("open");
+        });
+        renderBell();
+      }
     }
 
     const footer = document.querySelector("[data-include='footer']");
@@ -420,23 +661,149 @@
     getCart, addToCart, setQty, changeQty, removeFromCart, clearCart,
     cartTotals, updateCartCount, showToast,
     saveProducts, resetProducts, decrementStock,
+    api, syncProducts, isApiOnline,
+    ESTADOS, notifyPurchase, checkOrderUpdates, renderBell, getNotifs,
+    otpSend, otpVerify,
     Auth, Orders
   };
 
-  /* ---------- Init ---------- */
-  const PUBLIC_PAGES = ["login", "registro"];
+  /* ---------- 🤖 TecnoBot: asistente virtual de compras ---------- */
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  }
 
-  document.addEventListener("DOMContentLoaded", function () {
+  function initAssistant() {
     const page = document.body.dataset.page || "";
+    if (["login", "registro"].includes(page)) return;
+    if (document.getElementById("botFab")) return;
 
-    // Portón de autenticación: hay que iniciar sesión o registrarse primero
-    if (!Auth.current() && !PUBLIC_PAGES.includes(page)) {
-      window.location.replace("login.html");
-      return;
+    const fab = document.createElement("button");
+    fab.id = "botFab";
+    fab.className = "bot-fab";
+    fab.innerHTML = "🤖";
+    fab.setAttribute("aria-label", "Asistente virtual");
+
+    const panel = document.createElement("div");
+    panel.id = "botPanel";
+    panel.className = "bot-panel";
+    panel.innerHTML = `
+      <div class="bot-head">
+        <span>🤖 TecnoBot <small>asistente</small></span>
+        <button id="botClose" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="bot-msgs" id="botMsgs"></div>
+      <div class="bot-quick" id="botQuick"></div>
+      <form class="bot-input" id="botForm">
+        <input id="botText" placeholder="Escribe lo que buscas..." autocomplete="off" />
+        <button aria-label="Enviar">➤</button>
+      </form>`;
+
+    document.body.appendChild(fab);
+    document.body.appendChild(panel);
+
+    const msgs = panel.querySelector("#botMsgs");
+    const quick = panel.querySelector("#botQuick");
+
+    function add(html, who) {
+      const d = document.createElement("div");
+      d.className = "bot-msg " + who;
+      d.innerHTML = html;
+      msgs.appendChild(d);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+    function chips(arr) {
+      quick.innerHTML = arr.map((t) => `<button class="bot-chip">${t}</button>`).join("");
+    }
+    function open() {
+      panel.classList.add("open");
+      fab.classList.add("hidden");
+      if (!msgs.dataset.init) {
+        msgs.dataset.init = "1";
+        const u = Auth.current();
+        add(`¡Hola${u ? " " + u.nombre : ""}! 👋 Soy <strong>TecnoBot</strong>. Te ayudo a encontrar lo que buscas. ¿Qué necesitas hoy?`, "bot");
+        chips(["🔥 Ofertas", "⭐ Más vendidos", "📱 Celulares", "💸 Algo barato"]);
+      }
+    }
+    function close() { panel.classList.remove("open"); fab.classList.remove("hidden"); }
+
+    fab.addEventListener("click", open);
+    panel.querySelector("#botClose").addEventListener("click", close);
+    panel.querySelector("#botForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const inp = panel.querySelector("#botText");
+      const t = inp.value.trim();
+      if (!t) return;
+      add(escapeHtml(t), "user");
+      inp.value = "";
+      setTimeout(() => respond(t), 260);
+    });
+    quick.addEventListener("click", (e) => {
+      const b = e.target.closest(".bot-chip");
+      if (!b) return;
+      add(b.textContent, "user");
+      setTimeout(() => respond(b.textContent.replace(/^[^\wáéíóúÁÉÍÓÚ]+/, "").trim()), 220);
+    });
+
+    function cardLine(p) {
+      return `<a class="bot-prod" href="producto.html?id=${p.id}">
+        <img src="${p.image}" onerror="this.onerror=null;this.src='assets/placeholder.svg'" alt="">
+        <span><strong>${p.name}</strong><small>${money(p.price)}${discountPct(p) > 0 ? ` · ${discountPct(p)}% OFF` : ""}</small></span></a>`;
+    }
+    function showList(list, intro) {
+      if (!list.length) { add("No encontré productos para eso 😕. Prueba con otra palabra o una categoría.", "bot"); return; }
+      add(intro + list.slice(0, 4).map(cardLine).join(""), "bot");
     }
 
+    function respond(text) {
+      const t = text.toLowerCase();
+      if (/hola|buenas|hey|holi|saludos/.test(t)) {
+        add("¡Hola! 😊 Dime una categoría (celulares, audio, gamer...), una marca, 'ofertas' o un precio máximo.", "bot");
+        return;
+      }
+      if (/gracias|grasias/.test(t)) { add("¡De nada! 🙌 ¿Te ayudo con algo más?", "bot"); return; }
+      if (/oferta|descuento|rebaj|promo/.test(t)) {
+        showList(PRODUCTS.filter((p) => discountPct(p) > 0).sort((a, b) => discountPct(b) - discountPct(a)), "🔥 Estas son las mejores ofertas:");
+        return;
+      }
+      if (/vendido|popular|recomi|mejor/.test(t)) {
+        showList([...PRODUCTS].sort((a, b) => b.sold - a.sold), "⭐ Los más vendidos:");
+        return;
+      }
+      if (/carrito/.test(t)) {
+        const { count, total } = cartTotals();
+        add(count ? `Tienes <strong>${count}</strong> producto(s) por <strong>${money(total)}</strong>. <a href="carrito.html">Ver carrito →</a>` : "Tu carrito está vacío. ¿Te recomiendo algo? 😉", "bot");
+        return;
+      }
+      if (/(barat|económ|economic|menos de|bajo|hasta|presupuesto)/.test(t)) {
+        let max = null;
+        const num = t.replace(/\./g, "").match(/(\d{4,7})/);
+        if (num) max = +num[1];
+        let list = [...PRODUCTS].sort((a, b) => a.price - b.price);
+        if (max) list = list.filter((p) => p.price <= max);
+        showList(list, max ? `💸 Productos hasta ${money(max)}:` : "💸 Los más económicos:");
+        return;
+      }
+      const brands = [...new Set(PRODUCTS.map((p) => brandOf(p)))];
+      const bMatch = brands.find((b) => b !== "Otros" && t.includes(b.toLowerCase()));
+      if (bMatch) { showList(PRODUCTS.filter((p) => brandOf(p) === bMatch), `Productos <strong>${bMatch}</strong>:`); return; }
+      const catMap = [["celular", "smartphones"], ["tel", "smartphones"], ["smartphone", "smartphones"], ["note", "laptops"], ["laptop", "laptops"], ["computador", "laptops"], ["audíf", "audio"], ["audif", "audio"], ["audio", "audio"], ["parlante", "audio"], ["consola", "consolas"], ["play", "consolas"], ["xbox", "consolas"], ["nintendo", "consolas"], ["monitor", "monitores"], ["gamer", "gamer"], ["teclado", "gamer"], ["mouse", "gamer"], ["accesorio", "accesorios"], ["cargador", "accesorios"]];
+      const c = catMap.find(([k]) => t.includes(k));
+      if (c) { showList(PRODUCTS.filter((p) => p.category === c[1]), `Mira estos de <strong>${CATEGORIES[c[1]].label}</strong>:`); return; }
+      const found = PRODUCTS.filter((p) => t.split(/\s+/).some((w) => w.length > 2 && p.name.toLowerCase().includes(w)));
+      if (found.length) { showList(found, "Encontré esto para ti:"); return; }
+      add("Mmm, no estoy seguro 🤔. Puedes pedirme: <em>ofertas</em>, <em>celulares</em>, <em>audífonos</em>, una <em>marca</em> o <em>algo barato</em>.", "bot");
+      chips(["🔥 Ofertas", "📱 Celulares", "🎧 Audio", "🎮 Gamer"]);
+    }
+  }
+
+  /* ---------- Init ---------- */
+  document.addEventListener("DOMContentLoaded", function () {
     renderChrome();
     updateCartCount();
+    initAssistant();
+
+    // Conectar con el backend: traer el catálogo desde la API (si está disponible)
+    syncProducts();
 
     // Mostrar bienvenida con el logo si se acaba de iniciar sesión
     const welcome = localStorage.getItem("tecnoshop_welcome");
@@ -445,8 +812,9 @@
       showWelcome(welcome);
     }
 
-    // Activar control de inactividad cuando hay sesión
+    // Sesión activa: notificaciones de pedidos + control de inactividad
     if (Auth.current()) {
+      checkOrderUpdates();
       ["mousemove", "keydown", "click", "scroll", "touchstart"].forEach((ev) =>
         document.addEventListener(ev, resetInactivity, { passive: true }));
       resetInactivity();

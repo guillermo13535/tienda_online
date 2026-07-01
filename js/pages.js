@@ -116,7 +116,7 @@
     </div>
     <div class="b-body">
       <div class="b-meta">
-        <div><strong>Cliente:</strong> ${order.cliente || "Cliente"}<br><strong>Correo:</strong> ${order.correo || "-"}</div>
+        <div><strong>Cliente:</strong> ${order.cliente || "Cliente"}<br><strong>Correo:</strong> ${order.correo || order.email || "-"}</div>
         <div style="text-align:right"><strong>Fecha:</strong> ${fecha}<br><strong>Medio de pago:</strong> ${order.metodo}</div>
       </div>
       <table>
@@ -421,6 +421,18 @@
     const wrap = document.getElementById("cartContent");
     if (!wrap) return;
 
+    // Requiere iniciar sesión para abrir el carrito
+    if (!S.Auth.current()) {
+      wrap.innerHTML = `<div class="cart-empty">
+        <p style="font-size:3rem">🔒</p>
+        <p>Inicia sesión o regístrate para ver tu carrito y comprar.</p>
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:16px">
+          <a class="btn btn--primary" href="login.html">Iniciar sesión</a>
+          <a class="btn btn--outline" href="registro.html">Crear cuenta</a>
+        </div></div>`;
+      return;
+    }
+
     function render() {
       const cart = getCart();
       const { total } = cartTotals();
@@ -510,6 +522,18 @@
   function initCheckout() {
     const wrap = document.getElementById("checkoutContent");
     if (!wrap) return;
+
+    // Requiere iniciar sesión para pagar
+    if (!S.Auth.current()) {
+      wrap.innerHTML = `<div class="cart-empty">
+        <p style="font-size:3rem">🔒</p>
+        <p>Debes iniciar sesión para finalizar la compra.</p>
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:16px">
+          <a class="btn btn--primary" href="login.html">Iniciar sesión</a>
+          <a class="btn btn--outline" href="registro.html">Crear cuenta</a>
+        </div></div>`;
+      return;
+    }
 
     const cart = getCart();
     const { total } = cartTotals();
@@ -625,28 +649,66 @@
       const box = document.getElementById("mpBtns");
       const I = window.Integrations;
 
-      function demoButton(msg) {
-        box.innerHTML = `<p class="muted" style="font-size:.85rem">${msg}</p>
-          <button class="btn btn--primary btn--block" id="mpDemo">Pagar con Mercado Pago (demo)</button>`;
-        document.getElementById("mpDemo").addEventListener("click", () => finalizar("Mercado Pago"));
+      // Checkout simulado de Mercado Pago: dinero de prueba + errores de transacción
+      function simularMP(nota) {
+        box.innerHTML = `
+          <div class="mp-sim">
+            <p class="mp-sim__head">💙 Mercado Pago <span>· modo prueba (dinero ficticio)</span></p>
+            ${nota ? `<p class="muted" style="font-size:.78rem">${nota}</p>` : ""}
+            <label style="font-size:.85rem; font-weight:600">Tarjeta de prueba (elige el resultado):</label>
+            <select id="mpTest" class="select" style="width:100%; margin:6px 0 12px">
+              <option value="APRO">✅ APRO — Pago aprobado</option>
+              <option value="FUND">❌ FUND — Fondos insuficientes</option>
+              <option value="SECU">❌ SECU — Código de seguridad inválido</option>
+              <option value="EXPI">❌ EXPI — Tarjeta vencida</option>
+              <option value="CALL">⚠️ CALL — Error al procesar el pago</option>
+            </select>
+            <button class="btn btn--primary btn--block" id="mpPay">Pagar ${money(total)} (prueba)</button>
+            <div class="integra-result" id="mpMsg"></div>
+          </div>`;
+        document.getElementById("mpPay").addEventListener("click", () => {
+          const r = document.getElementById("mpTest").value;
+          const msgEl = document.getElementById("mpMsg");
+          const payBtn = document.getElementById("mpPay");
+          payBtn.disabled = true;
+          msgEl.className = "integra-result";
+          msgEl.textContent = "⏳ Procesando pago en Mercado Pago...";
+          setTimeout(() => {
+            if (r === "APRO") {
+              msgEl.className = "integra-result ok";
+              msgEl.textContent = "✅ Pago aprobado. Generando tu boleta...";
+              setTimeout(() => finalizar("Mercado Pago"), 800);
+            } else {
+              const errores = {
+                FUND: "Tu tarjeta no tiene fondos suficientes.",
+                SECU: "El código de seguridad (CVV) es inválido.",
+                EXPI: "La tarjeta está vencida.",
+                CALL: "No pudimos procesar el pago. Intenta nuevamente más tarde."
+              };
+              msgEl.className = "integra-result warn";
+              msgEl.innerHTML = `❌ <strong>Transacción rechazada:</strong> ${errores[r]}<br>Tu pedido NO se realizó. Puedes reintentar o cambiar de método.`;
+              payBtn.disabled = false;
+            }
+          }, 1300);
+        });
       }
 
       if (mpRendered) return;
       mpRendered = true;
 
-      // Si Mercado Pago está configurado, crear preferencia en el backend y mostrar el botón oficial
+      // Si hay credenciales reales de Mercado Pago, usar el botón oficial (sandbox)
       if (I && I.mpConfigured && I.mpConfigured()) {
         box.innerHTML = "<p class='muted'>Cargando Mercado Pago...</p>";
         try {
           const pref = await I.crearPreferencia(getCart());
-          if (pref && pref.demo) { demoButton("Mercado Pago en modo demostración (falta configurar el Access Token en el servidor)."); return; }
+          if (pref && pref.demo) { simularMP("No hay Access Token en el servidor; usando modo prueba."); return; }
           box.innerHTML = '<div id="mp-container"></div>';
           await I.renderMercadoPago("mp-container", pref.id);
         } catch (e) {
-          demoButton("No se pudo iniciar Mercado Pago (" + e.message + ").");
+          simularMP("No se pudo conectar con Mercado Pago (" + e.message + ").");
         }
       } else {
-        demoButton("Mercado Pago en modo demostración (configura tu Public Key para el pago real).");
+        simularMP("Configura tu Public Key para el pago real; por ahora usas dinero de prueba.");
       }
     }
 
@@ -711,35 +773,48 @@
       return ok;
     }
 
-    function finalizar(metodoLabel) {
+    async function finalizar(metodoLabel) {
       if (finalizando) return;       // evita pago doble
       finalizando = true;
       localStorage.setItem("tecnoshop_lastpurchase", Date.now()); // inicia la espera de 10s
-      const orden = "TS-" + Date.now().toString().slice(-8);
       const user = S.Auth.current();
       const emailField = document.getElementById("buyerEmail");
       const correo = (emailField && emailField.value.trim()) || (user && user.email) || "";
       const cartSnapshot = getCart();
-      const items = cartSnapshot.map((i) => {
-        const p = findProduct(i.id);
-        return { id: i.id, nombre: p ? p.name : "", qty: i.qty, price: p ? p.price : 0 };
-      });
 
-      const order = {
-        id: orden, email: correo || (user ? user.email : "invitado"), correo,
-        cliente: user ? user.nombre : "Cliente",
-        items, total, metodo: metodoLabel, fecha: new Date().toISOString()
-      };
+      let order = null;
+      // 1) Intentar crear el pedido en el backend (valida stock y total en el servidor)
+      try {
+        const remote = await S.Orders.createRemote(cartSnapshot.map((i) => ({ id: i.id, qty: i.qty })), metodoLabel);
+        order = { ...remote, correo };
+        await S.syncProducts(); // refrescar el stock real desde el servidor
+      } catch (e) {
+        // 2) Respaldo local (sin backend)
+        const items = cartSnapshot.map((i) => {
+          const p = findProduct(i.id);
+          return { id: i.id, nombre: p ? p.name : "", qty: i.qty, price: p ? p.price : 0 };
+        });
+        order = {
+          id: "TS-" + Date.now().toString().slice(-8),
+          email: correo || (user ? user.email : "invitado"), correo,
+          cliente: user ? user.nombre : "Cliente",
+          items, total, metodo: metodoLabel,
+          estado: "Pagado",
+          historial: [{ estado: "Pagado", fecha: new Date().toISOString() }],
+          fecha: new Date().toISOString()
+        };
+        S.Orders.add(order);
+        S.decrementStock(cartSnapshot);
+      }
 
-      // Guardar el pedido (historial "Mis pedidos")
-      S.Orders.add(order);
-      // Descontar el stock comprado
-      S.decrementStock(cartSnapshot);
+      const ordenId = order.id;
+      const totalFinal = order.total != null ? order.total : total;
+      S.notifyPurchase(ordenId); // 🔔 notificación: compra realizada
 
       // Webhook: notificar la compra a un sistema externo (POST)
       if (window.Integrations) {
         window.Integrations.sendWebhook("https://jsonplaceholder.typicode.com/posts", {
-          evento: "compra_realizada", orden, metodo: metodoLabel, total, items, fecha: order.fecha
+          evento: "compra_realizada", orden: ordenId, metodo: metodoLabel, total: totalFinal, items: order.items, fecha: order.fecha
         }).then((r) => console.log("Webhook enviado, HTTP", r.status))
           .catch((e) => console.warn("Webhook falló:", e.message));
       }
@@ -753,9 +828,9 @@
           <h2>¡Compra realizada con éxito!</h2>
           <p>Gracias por tu compra en TecnoShop.</p>
           <div class="checkout-success__box">
-            <p><span>N° de boleta</span><strong>${orden}</strong></p>
+            <p><span>N° de boleta</span><strong>${ordenId}</strong></p>
             <p><span>Medio de pago</span><strong>${metodoLabel}</strong></p>
-            <p><span>Total pagado</span><strong>${money(total)}</strong></p>
+            <p><span>Total pagado</span><strong>${money(totalFinal)}</strong></p>
           </div>
           <p class="email-status" id="emailStatus">📧 Preparando el envío de tu boleta...</p>
           <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:18px">
@@ -768,7 +843,7 @@
       S.clearCart();
 
       // Botón de descarga/impresión de la boleta
-      document.getElementById("btnBoleta").addEventListener("click", () => descargarBoleta(boletaHtml, orden));
+      document.getElementById("btnBoleta").addEventListener("click", () => descargarBoleta(boletaHtml, ordenId));
 
       // Envío de la boleta por correo (EmailJS)
       const status = document.getElementById("emailStatus");
@@ -777,11 +852,11 @@
         status.innerHTML = "🧾 Tu boleta está lista para descargar.";
       } else if (I && I.emailConfigured && I.emailConfigured()) {
         status.textContent = `📤 Enviando boleta a ${correo}...`;
-        const resumen = items.map((it) => `${it.qty} x ${it.nombre} — ${money(it.price * it.qty)}`).join("\n");
+        const resumen = order.items.map((it) => `${it.qty} x ${it.nombre} — ${money(it.price * it.qty)}`).join("\n");
         I.sendBoletaEmail({
-          to_email: correo, cliente: order.cliente, orden,
+          to_email: correo, cliente: order.cliente || (user ? user.nombre : "Cliente"), orden: ordenId,
           fecha: new Date(order.fecha).toLocaleString("es-CL"),
-          metodo: metodoLabel, total: money(total), detalle: resumen
+          metodo: metodoLabel, total: money(totalFinal), detalle: resumen
         }).then(() => { status.innerHTML = `✅ Boleta enviada a <strong>${correo}</strong>`; })
           .catch(() => { status.innerHTML = `🧾 No se pudo enviar el correo. Descarga tu boleta con el botón.`; });
       } else {
@@ -858,7 +933,7 @@
   }
 
   /* ---------- Página: Mis pedidos ---------- */
-  function initPedidos() {
+  async function initPedidos() {
     const wrap = document.getElementById("pedidosContent");
     if (!wrap) return;
     const user = S.Auth.current();
@@ -868,7 +943,10 @@
         <a class="btn btn--primary" href="login.html" style="margin-top:14px">Iniciar sesión</a></div>`;
       return;
     }
-    const orders = S.Orders.forCurrent();
+    wrap.innerHTML = `<p class="muted">Cargando tus pedidos...</p>`;
+    let orders = [];
+    try { orders = await S.Orders.listRemote(); }   // API (backend)
+    catch (_) { orders = S.Orders.forCurrent(); }    // respaldo local
     if (!orders.length) {
       wrap.innerHTML = `<div class="cart-empty"><p style="font-size:3rem">📦</p>
         <p>Aún no tienes pedidos.</p>
@@ -879,13 +957,22 @@
       const fecha = new Date(o.fecha).toLocaleString("es-CL");
       const itemsHtml = o.items.map((it) =>
         `<li><span>${it.qty} x ${it.nombre}</span><strong>${money(it.price * it.qty)}</strong></li>`).join("");
+      const estados = S.ESTADOS;
+      const actual = o.estado || "Pagado";
+      const idx = estados.indexOf(actual);
+      const tracker = `<div class="tracker">` + estados.map((e, i) =>
+        `<div class="tracker__step ${i <= idx ? "done" : ""} ${i === idx ? "current" : ""}">
+           <span class="tracker__dot">${i < idx ? "✓" : (i === idx ? "●" : i + 1)}</span>
+           <small>${e}</small>
+         </div>`).join("") + `</div>`;
       return `<div class="order-card">
         <div class="order-card__head">
           <div><strong>Orden ${o.id}</strong><br><small class="muted">${fecha}${user.role === "admin" ? " · " + o.email : ""}</small></div>
           <div class="order-card__total">${money(o.total)}</div>
         </div>
+        ${tracker}
         <ul class="order-card__items">${itemsHtml}</ul>
-        <div class="order-card__foot">💳 ${o.metodo} · <span class="badge-ok">✓ Confirmado</span>
+        <div class="order-card__foot">💳 ${o.metodo} · Estado: <span class="badge-ok">${actual}</span>
           <button class="btn btn--outline btn-sm" data-boleta="${o.id}" style="margin-left:auto">🧾 Descargar boleta</button>
         </div>
       </div>`;
@@ -955,7 +1042,11 @@
                 </td>
               </tr>`).join("")}</tbody>
           </table>
-        </div>`;
+        </div>
+
+        <h2 class="section-title" style="margin-top:40px">Gestión de pedidos</h2>
+        <p class="muted" style="margin-bottom:10px">Cambia el estado para notificar al cliente (Pagado → Despachado → En camino → Entregado).</p>
+        <div id="adminOrders"><p class="muted">Cargando pedidos...</p></div>`;
 
       document.getElementById("btnNuevo").addEventListener("click", () => { editId = null; showForm(); });
       document.getElementById("btnReset").addEventListener("click", () => {
@@ -973,6 +1064,36 @@
             if (idx >= 0) PRODUCTS.splice(idx, 1);
             S.saveProducts(); render(); S.showToast("Producto eliminado");
           }
+        }));
+
+      loadOrders();
+    }
+
+    // Lista de pedidos con selector de estado (notifica al cliente)
+    async function loadOrders() {
+      const box = document.getElementById("adminOrders");
+      if (!box) return;
+      let orders = [];
+      try { orders = await S.Orders.listRemote(); } catch { orders = S.Orders.all(); }
+      if (!orders.length) { box.innerHTML = `<p class="muted">No hay pedidos aún.</p>`; return; }
+      box.innerHTML = `<div style="overflow-x:auto"><table class="cart-table">
+        <thead><tr><th>Orden</th><th>Cliente</th><th>Total</th><th>Estado</th></tr></thead>
+        <tbody>${orders.map((o) => `
+          <tr>
+            <td data-label="Orden">${o.id}</td>
+            <td data-label="Cliente">${o.email}</td>
+            <td data-label="Total">${money(o.total)}</td>
+            <td data-label="Estado">
+              <select class="select" data-order="${o.id}">
+                ${S.ESTADOS.map((e) => `<option ${(o.estado || "Pagado") === e ? "selected" : ""}>${e}</option>`).join("")}
+              </select>
+            </td>
+          </tr>`).join("")}</tbody>
+      </table></div>`;
+      box.querySelectorAll("[data-order]").forEach((sel) =>
+        sel.addEventListener("change", async () => {
+          try { await S.Orders.updateEstado(sel.dataset.order, sel.value); S.showToast("Estado actualizado: " + sel.value); }
+          catch (e) { S.showToast("No se pudo actualizar: " + (e.message || "error")); }
         }));
     }
 
@@ -1060,15 +1181,106 @@
     }
   });
 
+  /* ---------- Página: Perfil del cliente ---------- */
+  function initPerfil() {
+    const wrap = document.getElementById("perfilContent");
+    if (!wrap) return;
+    const u = S.Auth.fullUser();
+    if (!u) {
+      wrap.innerHTML = `<div class="cart-empty"><p style="font-size:3rem">🔒</p>
+        <p>Inicia sesión para ver tu perfil.</p>
+        <a class="btn btn--primary" href="login.html" style="margin-top:14px">Iniciar sesión</a></div>`;
+      return;
+    }
+    const inicial = (u.nombre || "U").charAt(0).toUpperCase();
+    const pedidos = S.Orders.forCurrent().length;
+
+    wrap.innerHTML = `
+      <div class="perfil-grid">
+        <!-- Tarjeta de datos -->
+        <div class="panel">
+          <div class="perfil-head">
+            <div class="perfil-avatar">${inicial}</div>
+            <div>
+              <h3 style="margin:0">${u.nombre} ${u.apellido || ""}</h3>
+              <p class="muted" style="margin:0">${u.email}</p>
+              <span class="badge-ok">${u.role === "admin" ? "Administrador" : "Cliente"}</span>
+            </div>
+          </div>
+
+          <h3 style="margin-top:22px">Mis datos</h3>
+          <form id="perfilForm">
+            <div class="admin-form__grid">
+              <div class="field"><label>Nombre</label><input id="pf_nombre" value="${(u.nombre || "").replace(/"/g, "&quot;")}"></div>
+              <div class="field"><label>Apellido</label><input id="pf_apellido" value="${(u.apellido || "").replace(/"/g, "&quot;")}"></div>
+              <div class="field"><label>Teléfono</label><input id="pf_tel" value="${u.telefono || ""}" placeholder="+56 9 ..."></div>
+              <div class="field"><label>Correo</label><input value="${u.email}" disabled></div>
+            </div>
+            <div class="field"><label>Dirección de envío</label><input id="pf_dir" value="${(u.direccion || "").replace(/"/g, "&quot;")}" placeholder="Calle, número, comuna, ciudad"></div>
+            <button class="btn btn--primary" type="submit">Guardar cambios</button>
+            <span class="email-status" id="pf_msg"></span>
+          </form>
+        </div>
+
+        <!-- Apartados / accesos -->
+        <div class="perfil-side">
+          <a href="pedidos.html" class="perfil-card">
+            <span class="perfil-card__ico">📦</span>
+            <span><strong>Mis pedidos</strong><small>${pedidos} pedido(s) realizados</small></span>
+          </a>
+          <a href="carrito.html" class="perfil-card">
+            <span class="perfil-card__ico">🛒</span>
+            <span><strong>Mi carrito</strong><small>Ver productos guardados</small></span>
+          </a>
+          <a href="productos.html" class="perfil-card">
+            <span class="perfil-card__ico">🛍️</span>
+            <span><strong>Seguir comprando</strong><small>Explorar el catálogo</small></span>
+          </a>
+          ${u.role === "admin" ? `<a href="admin.html" class="perfil-card">
+            <span class="perfil-card__ico">⚙️</span>
+            <span><strong>Administración</strong><small>Gestionar productos y pedidos</small></span></a>` : ""}
+          <a href="#" id="pf_logout" class="perfil-card">
+            <span class="perfil-card__ico">🚪</span>
+            <span><strong>Cerrar sesión</strong><small>Salir de mi cuenta</small></span>
+          </a>
+        </div>
+      </div>`;
+
+    document.getElementById("perfilForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      S.Auth.updateProfile({
+        nombre: document.getElementById("pf_nombre").value.trim() || u.nombre,
+        apellido: document.getElementById("pf_apellido").value.trim(),
+        telefono: document.getElementById("pf_tel").value.trim(),
+        direccion: document.getElementById("pf_dir").value.trim()
+      });
+      document.getElementById("pf_msg").innerHTML = "✅ Datos guardados correctamente.";
+      S.showToast("Perfil actualizado");
+    });
+    document.getElementById("pf_logout").addEventListener("click", (e) => {
+      e.preventDefault();
+      S.Auth.logout();
+      window.location.href = "index.html";
+    });
+  }
+
   /* ---------- Bootstrap por página ---------- */
   document.addEventListener("DOMContentLoaded", function () {
     const page = document.body.dataset.page;
-    if (page === "home") initHome();
-    if (page === "productos") initCatalog();
-    if (page === "producto") initDetail();
-    if (page === "carrito") initCart();
-    if (page === "checkout") initCheckout();
-    if (page === "pedidos") initPedidos();
-    if (page === "admin") initAdmin();
+    function run() {
+      if (page === "home") initHome();
+      if (page === "productos") initCatalog();
+      if (page === "producto") initDetail();
+      if (page === "carrito") initCart();
+      if (page === "checkout") initCheckout();
+      if (page === "pedidos") initPedidos();
+      if (page === "admin") initAdmin();
+      if (page === "perfil") initPerfil();
+    }
+    run();
+    // Cuando el catálogo llega desde la API, re-renderizar las páginas que lo muestran
+    document.addEventListener("tecnoshop:products", () => {
+      if (["home", "productos", "producto"].includes(page)) run();
+    });
   });
 })();

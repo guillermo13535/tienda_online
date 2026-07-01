@@ -46,6 +46,15 @@ function currentUser(req) {
 function publicUser(u) {
   return { id: u.id, nombre: u.nombre, email: u.email, role: u.role };
 }
+// Compara teléfonos ignorando espacios/código de país (uno termina en el otro)
+function phoneEq(a, b) {
+  a = String(a || "").replace(/\D/g, "");
+  b = String(b || "").replace(/\D/g, "");
+  if (a.length < 8 || b.length < 8) return false;
+  return a === b || a.endsWith(b) || b.endsWith(a);
+}
+function normPhone(t) { return String(t || "").replace(/\D/g, ""); }
+const otpStore = {}; // { telefonoDigits: { code, exp } }
 
 /* ---------- Archivos estáticos (sirve el sitio) ---------- */
 const MIME = {
@@ -107,20 +116,22 @@ async function api(req, res, p) {
 
   // AUTENTICACIÓN
   if (p === "/api/auth/register" && m === "POST") {
-    const { nombre, apellido, email, password } = await readBody(req);
+    const { nombre, apellido, email, password, telefono } = await readBody(req);
     if (!email || !password) return json(res, 400, { error: "Faltan datos" });
     const mail = String(email).toLowerCase().trim();
-    if (db.data.users.some((u) => u.email === mail)) return json(res, 409, { error: "Ya existe una cuenta con ese correo" });
+    const tel = String(telefono || "").trim();
+    const dup = db.data.users.some((u) => u.email === mail || phoneEq(u.telefono, tel));
+    if (dup) return json(res, 409, { error: "Ya existe una cuenta con ese correo o teléfono" });
     const id = Math.max(0, ...db.data.users.map((u) => u.id)) + 1;
-    db.data.users.push({ id, nombre, apellido: apellido || "", email: mail, password: auth.hashPassword(password), role: "cliente" });
+    db.data.users.push({ id, nombre, apellido: apellido || "", email: mail, telefono: tel, password: auth.hashPassword(password), role: "cliente" });
     db.save();
     return json(res, 201, { ok: true });
   }
   if (p === "/api/auth/login" && m === "POST") {
     const { email, password } = await readBody(req);
-    const mail = String(email || "").toLowerCase().trim();
-    const user = db.data.users.find((u) => u.email === mail);
-    if (!user || !auth.verifyPassword(password, user.password)) return json(res, 401, { error: "Correo o contraseña incorrectos" });
+    const id = String(email || "").toLowerCase().trim();
+    const user = db.data.users.find((u) => u.email === id || phoneEq(u.telefono, id));
+    if (!user || !auth.verifyPassword(password, user.password)) return json(res, 401, { error: "Correo/teléfono o contraseña incorrectos" });
     return json(res, 200, { token: auth.sign({ id: user.id, role: user.role }), user: publicUser(user) });
   }
   if (p === "/api/auth/me" && m === "GET") {
@@ -159,10 +170,60 @@ async function api(req, res, p) {
     const order = {
       id: "TS-" + Date.now().toString().slice(-8), userId: u.id, email: u.email,
       cliente: u.nombre, items: detail, total, metodo: metodo || "Tarjeta",
+      estado: "Pagado",
+      historial: [{ estado: "Pagado", fecha: new Date().toISOString() }],
       fecha: new Date().toISOString()
     };
     db.data.orders.unshift(order); db.save();
     return json(res, 201, order);
+  }
+
+  // PEDIDOS: actualizar estado (solo admin) -> Pagado / Despachado / En camino / Entregado
+  const oem = p.match(/^\/api\/orders\/([\w-]+)\/estado$/);
+  if (oem && m === "PUT") {
+    const u = currentUser(req);
+    if (!u || u.role !== "admin") return json(res, 403, { error: "Solo administradores" });
+    const { estado } = await readBody(req);
+    const o = db.data.orders.find((x) => x.id === oem[1]);
+    if (!o) return json(res, 404, { error: "Pedido no encontrado" });
+    o.estado = estado;
+    (o.historial = o.historial || []).push({ estado, fecha: new Date().toISOString() });
+    db.save();
+    return json(res, 200, o);
+  }
+
+  // OTP por SMS: enviar código (usa Twilio si hay credenciales; si no, modo demo)
+  if (p === "/api/otp/send" && m === "POST") {
+    const { telefono } = await readBody(req);
+    const key = normPhone(telefono);
+    if (key.length < 8) return json(res, 400, { error: "Teléfono inválido" });
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    otpStore[key] = { code, exp: Date.now() + 5 * 60 * 1000 };
+    const sid = process.env.TWILIO_SID, token = process.env.TWILIO_TOKEN, from = process.env.TWILIO_FROM;
+    if (sid && token && from) {
+      try {
+        const body = new URLSearchParams({ To: "+" + key, From: from, Body: `Tu código de verificación TecnoShop es: ${code}` });
+        const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+          method: "POST",
+          headers: { "Authorization": "Basic " + Buffer.from(sid + ":" + token).toString("base64"), "Content-Type": "application/x-www-form-urlencoded" },
+          body: body.toString()
+        });
+        if (!r.ok) { const e = await r.json().catch(() => ({})); return json(res, 502, { error: "No se pudo enviar el SMS", detalle: e }); }
+        return json(res, 200, { ok: true, canal: "sms" });
+      } catch (e) { return json(res, 502, { error: "Error al enviar SMS: " + e.message }); }
+    }
+    return json(res, 200, { ok: true, demo: true, code }); // sin Twilio: devolvemos el código para mostrarlo
+  }
+
+  // OTP por SMS: verificar código
+  if (p === "/api/otp/verify" && m === "POST") {
+    const { telefono, code } = await readBody(req);
+    const key = Object.keys(otpStore).find((k) => phoneEq(k, telefono));
+    const rec = key ? otpStore[key] : null;
+    if (!rec || rec.exp < Date.now()) return json(res, 400, { ok: false, error: "El código expiró. Solicítalo de nuevo." });
+    if (String(code) !== rec.code) return json(res, 400, { ok: false, error: "Código incorrecto." });
+    delete otpStore[key];
+    return json(res, 200, { ok: true });
   }
 
   // MERCADO PAGO: crear preferencia de pago (seguro, con el Access Token del servidor)
@@ -197,7 +258,7 @@ async function api(req, res, p) {
       });
       const data = await r.json();
       if (!r.ok) return json(res, 502, { error: "Error de Mercado Pago", detalle: data });
-      return json(res, 200, { id: data.id, init_point: data.init_point });
+      return json(res, 200, { id: data.id, init_point: data.init_point, sandbox_init_point: data.sandbox_init_point });
     } catch (e) {
       return json(res, 502, { error: "No se pudo conectar con Mercado Pago: " + e.message });
     }
