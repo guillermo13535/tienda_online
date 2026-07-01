@@ -261,6 +261,20 @@
       localStorage.setItem(SESSION_KEY, JSON.stringify({ email: user.email, nombre: user.nombre, role: user.role }));
       return user;
     },
+    // Inicio de sesión por teléfono verificado (SMS/OTP)
+    loginByPhone(telefono) {
+      const users = getUsers();
+      let user = users.find((u) => phoneEq(u.telefono, telefono));
+      if (!user) {
+        const nombre = "Usuario " + String(telefono).replace(/\D/g, "").slice(-4);
+        user = { nombre, apellido: "", email: "", telefono, password: "", role: "cliente", via: "sms" };
+        users.push(user);
+        saveUsers(users);
+      }
+      const idSesion = user.email || String(telefono);
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ email: idSesion, nombre: user.nombre, role: user.role }));
+      return user;
+    },
     logout() { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(TOKEN_KEY); },
     current() {
       try { return JSON.parse(localStorage.getItem(SESSION_KEY)); }
@@ -402,6 +416,34 @@
     el.classList.add("show");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
+  }
+
+  /* ---------- OTP por SMS (con respaldo demo) ---------- */
+  const OTP_KEY = "tecnoshop_otp";
+  async function otpSend(telefono) {
+    try {
+      return await api("/api/otp/send", { method: "POST", body: { telefono } });
+    } catch (e) {
+      if (e.status && e.status !== 404) throw e; // 400 = teléfono inválido, etc.
+    }
+    // Respaldo demo (sin backend): generamos y guardamos el código localmente
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    localStorage.setItem(OTP_KEY, JSON.stringify({ tel: String(telefono).replace(/\D/g, ""), code, exp: Date.now() + 5 * 60 * 1000 }));
+    return { ok: true, demo: true, code };
+  }
+  async function otpVerify(telefono, code) {
+    try {
+      const r = await api("/api/otp/verify", { method: "POST", body: { telefono, code } });
+      return r.ok === true;
+    } catch (e) {
+      if (e.status && e.status !== 404) return false; // código incorrecto/expirado en el backend
+    }
+    let rec = null;
+    try { rec = JSON.parse(localStorage.getItem(OTP_KEY)); } catch (_) {}
+    if (!rec || rec.exp < Date.now()) return false;
+    if (String(code) !== rec.code) return false;
+    localStorage.removeItem(OTP_KEY);
+    return true;
   }
 
   function goSearch(q) {
@@ -621,6 +663,7 @@
     saveProducts, resetProducts, decrementStock,
     api, syncProducts, isApiOnline,
     ESTADOS, notifyPurchase, checkOrderUpdates, renderBell, getNotifs,
+    otpSend, otpVerify,
     Auth, Orders
   };
 

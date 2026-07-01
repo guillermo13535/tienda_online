@@ -53,6 +53,8 @@ function phoneEq(a, b) {
   if (a.length < 8 || b.length < 8) return false;
   return a === b || a.endsWith(b) || b.endsWith(a);
 }
+function normPhone(t) { return String(t || "").replace(/\D/g, ""); }
+const otpStore = {}; // { telefonoDigits: { code, exp } }
 
 /* ---------- Archivos estáticos (sirve el sitio) ---------- */
 const MIME = {
@@ -188,6 +190,40 @@ async function api(req, res, p) {
     (o.historial = o.historial || []).push({ estado, fecha: new Date().toISOString() });
     db.save();
     return json(res, 200, o);
+  }
+
+  // OTP por SMS: enviar código (usa Twilio si hay credenciales; si no, modo demo)
+  if (p === "/api/otp/send" && m === "POST") {
+    const { telefono } = await readBody(req);
+    const key = normPhone(telefono);
+    if (key.length < 8) return json(res, 400, { error: "Teléfono inválido" });
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    otpStore[key] = { code, exp: Date.now() + 5 * 60 * 1000 };
+    const sid = process.env.TWILIO_SID, token = process.env.TWILIO_TOKEN, from = process.env.TWILIO_FROM;
+    if (sid && token && from) {
+      try {
+        const body = new URLSearchParams({ To: "+" + key, From: from, Body: `Tu código de verificación TecnoShop es: ${code}` });
+        const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+          method: "POST",
+          headers: { "Authorization": "Basic " + Buffer.from(sid + ":" + token).toString("base64"), "Content-Type": "application/x-www-form-urlencoded" },
+          body: body.toString()
+        });
+        if (!r.ok) { const e = await r.json().catch(() => ({})); return json(res, 502, { error: "No se pudo enviar el SMS", detalle: e }); }
+        return json(res, 200, { ok: true, canal: "sms" });
+      } catch (e) { return json(res, 502, { error: "Error al enviar SMS: " + e.message }); }
+    }
+    return json(res, 200, { ok: true, demo: true, code }); // sin Twilio: devolvemos el código para mostrarlo
+  }
+
+  // OTP por SMS: verificar código
+  if (p === "/api/otp/verify" && m === "POST") {
+    const { telefono, code } = await readBody(req);
+    const key = Object.keys(otpStore).find((k) => phoneEq(k, telefono));
+    const rec = key ? otpStore[key] : null;
+    if (!rec || rec.exp < Date.now()) return json(res, 400, { ok: false, error: "El código expiró. Solicítalo de nuevo." });
+    if (String(code) !== rec.code) return json(res, 400, { ok: false, error: "Código incorrecto." });
+    delete otpStore[key];
+    return json(res, 200, { ok: true });
   }
 
   // MERCADO PAGO: crear preferencia de pago (seguro, con el Access Token del servidor)
